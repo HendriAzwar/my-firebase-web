@@ -8,6 +8,9 @@ import hideIcon from '../assets/hide.svg';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+
 
 const Masuk = () => {
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
@@ -23,41 +26,43 @@ const Masuk = () => {
     const togglePassword = () => {
         setShowPassword(!showPassword);
     };
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
     const handleLogin = async (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await response.json();
-            if (response.ok && data.code === 'LOGIN_SUCCESS') {
-                localStorage.setItem('userId', data.user.id);
-                toast.success(t.masukBerhasil, { position: 'top-right', autoClose: 1000 });
-                setTimeout(() => navigate('/beranda'), 2000);
-            } else {
-                switch (data.code) {
-                    case 'WRONG_EMAIL':
-                        toast.error(t.emailGagal, { position: 'top-right', autoClose: 2000 });
-                        break;
-                    case 'WRONG_PASSWORD':
-                        toast.error(t.katasandiGagal, { position: 'top-right', autoClose: 2000 });
-                        break;
-                    default:
-                        toast.error(t.terjadiKesalahan, { position: 'top-right', autoClose: 2000 });
-                        break;
-                }
-                setTimeout(() => navigate('/'), 2000);
-            }                       
-        } catch (error) {
-            toast.error(t.terjadiKesalahan, { position: 'top-right', autoClose: 2000 });
-        }
-        console.log("Data dari Firebase:", userData);
 
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            localStorage.setItem('userId', user.uid); // Simpan UID ke localStorage
+
+            toast.success(t.masukBerhasil, {
+                position: 'top-right',
+                autoClose: 1000,
+                closeButton: false,
+                pauseOnHover: false
+            });
+
+            setTimeout(() => navigate('/beranda'), 2000);
+        } catch (error) {
+            console.error("Login error:", error.code);
+
+            if (error.code === 'auth/user-not-found') {
+                toast.error(t.emailGagal, { position: 'top-right', autoClose: 2000 });
+            } else if (error.code === 'auth/wrong-password') {
+                toast.error(t.katasandiGagal, { position: 'top-right', autoClose: 2000 });
+            } else {
+                toast.error(t.terjadiKesalahan, { position: 'top-right', autoClose: 2000 });
+            }
+
+            setTimeout(() => navigate('/'), 2000);
+        }
     };
+
 
     return (
         <div className="login-flex-container">
@@ -91,6 +96,8 @@ const Masuk = () => {
                         type="email"
                         id="email"
                         placeholder={t.placeholderEmail}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                     <label htmlFor="password">{t.kataSandi}</label>
@@ -99,6 +106,8 @@ const Masuk = () => {
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             placeholder={t.placeholderKataSandi}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                         <img

@@ -8,6 +8,9 @@ import hideIcon from '../assets/hide.svg';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { auth } from '../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
+
 
 const LupaPassword = () => {
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
@@ -26,40 +29,28 @@ const LupaPassword = () => {
     };
     const changePassword = async (e) => {
         e.preventDefault();
-        if (newPassword !== confirmPassword) {
-            toast.error(t.kataSandiTidakSesuai, { position: 'top-right', autoClose: 2000 });
+
+        if (!email) {
+            toast.error("Email wajib diisi", { position: 'top-right', autoClose: 2000 });
             return;
         }
+
         try {
-            const emailCheck = await fetch('http://localhost:5000/api/auth/verify-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-            const emailResult = await emailCheck.json();
-            if (!emailCheck.ok || emailResult.code !== 'EMAIL_FOUND') {
-                toast.error(t.emailTidakDitemukan, { position: 'top-right', autoClose: 2000 });
-                return;
-            }
-            const resetResponse = await fetch('http://localhost:5000/api/auth/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, newPassword }),
-            });
-            const resetResult = await resetResponse.json();
-            if (resetResult.code === 'PASSWORD_SAME_AS_OLD') {
-                toast.error(t.kataSandiSamaSebelumnya, { position: 'top-right', autoClose: 2000 });
-            } else if (resetResponse.ok && resetResult.code === 'RESET_SUCCESS') {
-                toast.success(t.kataSandiBerhasilDiubah, { position: 'top-right', autoClose: 1000 });
-                setTimeout(() => navigate('/'), 2000);
-            } else {
-                toast.error(t.kataSandiGagalDiubah, { position: 'top-right', autoClose: 2000 });
-            }
+            await sendPasswordResetEmail(auth, email);
+            toast.success(t.kataSandiBerhasilDiubah, { position: 'top-right', autoClose: 2000 });
+            setTimeout(() => navigate('/'), 2000);
         } catch (error) {
-            console.error('Error:', error);
+            console.error("Reset password error:", error);
+            const code = error.code;
+
+            if (code === 'auth/user-not-found') {
+            toast.error(t.emailTidakDitemukan, { position: 'top-right', autoClose: 2000 });
+            } else {
             toast.error(t.kataSandiGagalDiubah, { position: 'top-right', autoClose: 2000 });
+            }
         }
     };
+
     
     return (
         <div className="login-flex-container">

@@ -4,4 +4,3 @@ backend/serviceAccountKey.json
 node_modules/
 dist/
 .vscode/
-

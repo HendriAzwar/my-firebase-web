@@ -8,6 +8,10 @@ import hideIcon from '../assets/hide.svg';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { auth, db } from '../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+
 
 const Daftar = () => {
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
@@ -25,32 +29,39 @@ const Daftar = () => {
     };
     const handleSignup = async (e) => {
         e.preventDefault();
+
         const full_name = document.getElementById('full_name').value;
         const phone_number = document.getElementById('phone_number').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+
         try {
-            const response = await fetch('http://localhost:5000/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ full_name, phone_number, email, password })
+            // Daftar user via Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Simpan data tambahan ke Firestore
+            await setDoc(doc(db, 'users', user.uid), {
+            id: user.uid,
+            full_name,
+            phone_number,
+            email
             });
-            const data = await response.json();
-            if (response.ok && data.code === 'REGISTRATION_SUCCESS') {
-                toast.success(t.daftarBerhasil, { position: 'top-right', autoClose: 1000 });
-                setTimeout(() => navigate('/'), 2000);
-            } else if (data.code === 'PHONE_ALREADY_EXISTS') {
-                toast.error(t.nomorTelahDigunakan, { position: 'top-right', autoClose: 2000 });
-            } else if (data.code === 'EMAIL_ALREADY_EXISTS') {
-                toast.error(t.emailTelahDigunakan, { position: 'top-right', autoClose: 2000 });
-            } else {
-                toast.error(t.daftarTerjadiKesalahan, { position: 'top-right', autoClose: 2000 });
-            }
+
+            toast.success(t.daftarBerhasil, { position: 'top-right', autoClose: 1000 });
+            setTimeout(() => navigate('/'), 2000);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Register error:', error);
+            const code = error.code;
+
+            if (code === 'auth/email-already-in-use') {
+            toast.error(t.emailTelahDigunakan, { position: 'top-right', autoClose: 2000 });
+            } else {
             toast.error(t.daftarTerjadiKesalahan, { position: 'top-right', autoClose: 2000 });
+            }
         }
-    };    
+    };
+
 
     return (
         <div className="login-flex-container">
