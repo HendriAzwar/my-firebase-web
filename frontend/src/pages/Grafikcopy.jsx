@@ -20,6 +20,9 @@ import {
     Legend,
     ResponsiveContainer,
 } from "recharts";
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
+
 
 const Grafik = () => {
     // ===== State untuk MCB yang tersedia =====
@@ -169,34 +172,29 @@ const Grafik = () => {
     }, []);
 
     // ===== Fetch untuk cek MCB yang tersedia =====
+    const MCB_CONFIG = {
+      mcb1: { collection: "monitoring_listrik_mcb1", rooms: [1, 2, 3], roomNames: ["Kamar 1", "Kamar 2", "Kamar 3"] },
+      mcb2: { collection: "monitoring_listrik_mcb2", rooms: [4, 5, 6], roomNames: ["Kamar 4", "Kamar 5", "Kamar 6"] },
+      mcb3: { collection: "monitoring_listrik_mcb3", rooms: [7, 8, 9], roomNames: ["Kamar 7", "Kamar 8", "Kamar 9"] },
+      mcb4: { collection: "monitoring_listrik_mcb4", rooms: [10, 11, 12], roomNames: ["Kamar 10", "Kamar 11", "Kamar 12"] },
+    };
+
     useEffect(() => {
-        const findAvailableMCBs = async () => {
-            try {
-                const res = await fetch("http://localhost:5000/api/grafik/mcb-config");
-                if (res.ok) {
-                    const mcbList = await res.json();
-                    setAvailableMCBs(mcbList);
+      const mcbList = Object.keys(MCB_CONFIG).map((id) => ({
+        id,
+        name: `MCB ${id.replace("mcb", "")}`,
+        roomNames: MCB_CONFIG[id].roomNames,
+      }));
 
-                    // Set default selections
-                    if (mcbList.length > 0) {
-                        const defaultMCB = mcbList[0];
-                        setSelectedMCB(defaultMCB.id);
-                        setMcbConfig(defaultMCB);
+      setAvailableMCBs(mcbList);
+      const defaultMCB = mcbList[0];
+      setSelectedMCB(defaultMCB.id);
+      setMcbConfig(defaultMCB);
 
-                        // Set default selected lines untuk MCB pertama
-                        const defaultLines = defaultMCB.roomNames.map(
-                          (_, idx) => `room${idx + 1}`
-                        );
-                        setSelectedLines(defaultLines);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching MCB config:", error);
-            }
-        };
-
-        findAvailableMCBs();
+      const defaultLines = defaultMCB.roomNames.map((_, idx) => `room${idx + 1}`);
+      setSelectedLines(defaultLines);
     }, []);
+
 
     // ===== Set default range data yang mau ditampilkan =====
     useEffect(() => {
@@ -222,45 +220,98 @@ const Grafik = () => {
 
     // ===== Fetch utama untuk kalender =====
     useEffect(() => {
-        if (!selectedMCB || !startDate || !endDate) return;
+      if (!selectedMCB || !startDate || !endDate) return;
 
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                let url = `http://localhost:5000/api/grafik/harian/${selectedMCB}`;
-                const params = new URLSearchParams();
+      const fetchData = async () => {
+        setLoading(true);
 
-                params.append("startDate", formatDateForAPI(startDate));
-                params.append("endDate", formatDateForAPI(endDate));
+        try {
+          const config = MCB_CONFIG[selectedMCB];
+          const snapshot = await getDocs(collection(db, config.collection));
 
-                url += `?${params.toString()}`;
-                console.log("Fetching URL:", url); // Untuk debugging
-
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                const json = await res.json();
-
-                if (json.data) {
-                    const orderedData = [...json.data].sort(
-                      (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
-                    );
-                    setData(orderedData);
-                    setSummaryData(json.summary);
-                } else {
-                    setData([]);
-                    setSummaryData(null);
-                }
-            } catch (err) {
-                console.error("Gagal mengambil data grafik:", err);
-                setData([]);
-                setSummaryData(null);
-            } finally {
-                setLoading(false);
+          const rawData = snapshot.docs.map((doc) => {
+            const d = doc.data();
+            if (d.timestamp?.toDate) {
+              d.timestamp = d.timestamp.toDate().toISOString();
             }
-        };
+            return d;
+          }).filter((d) => {
+            const date = new Date(d.timestamp);
+            if (startDate && date < new Date(startDate)) return false;
+            if (endDate && date > new Date(endDate)) return false;
+            return config.rooms.includes(d.kamar);
+          });
 
-        fetchData();
+          const grouped = {};
+          rawData.forEach((entry) => {
+            if (!entry.timestamp) return;
+            const ts = new Date(entry.timestamp);
+            if (isNaN(ts)) return;
+
+            const dateStr = ts.toISOString().split("T")[0];
+            if (!grouped[dateStr]) {
+              grouped[dateStr] = {
+                timestamp: dateStr,
+                tanggal: dateStr,
+                hari_tanggal: ts.getDate(),
+                hari_dalam_minggu: ts.getDay() || 7,
+                nama_hari: ts.toLocaleDateString("id-ID", { weekday: "long" }),
+                minggu_ke: Math.ceil(ts.getDate() / 7),
+                minggu_absolut: getWeekNumber(ts),
+                bulan: ts.toLocaleDateString("id-ID", { month: "long" }),
+                bulan_num: ts.getMonth() + 1,
+                tahun: ts.getFullYear(),
+              };
+              config.rooms.forEach((_, idx) => {
+                grouped[dateStr][`room${idx + 1}`] = 0;
+              });
+            }
+            const idx = config.rooms.indexOf(entry.kamar);
+            if (idx >= 0) grouped[dateStr][`room${idx + 1}`] += entry.kWh;
+          });
+
+          const formattedResults = Object.values(grouped);
+
+          const tarifPerKwh = 1445;
+          const summary = {
+            label: "Total",
+            jumlah_hari: formattedResults.length,
+            tanggal_mulai: formattedResults[0]?.tanggal,
+            tanggal_akhir: formattedResults.at(-1)?.tanggal,
+            total_keseluruhan: 0,
+            tarif_total: 0,
+            rooms: [],
+          };
+
+          config.roomNames.forEach((_, idx) => {
+            const total = formattedResults.reduce((sum, r) => sum + (r[`room${idx + 1}`] || 0), 0);
+            const tarif = total * tarifPerKwh;
+            summary.total_keseluruhan += total;
+            summary.tarif_total += tarif;
+            summary.rooms.push({ name: config.roomNames[idx], total, tarif });
+          });
+
+          setData(formattedResults);
+          setSummaryData(summary);
+        } catch (err) {
+          console.error("Gagal mengambil data grafik:", err);
+          setData([]);
+          setSummaryData(null);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
     }, [selectedMCB, startDate, endDate]);
+
+    function getWeekNumber(d) {
+      d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    }
 
     // ===== Tombol pengatur visibility garis tertentu pada grafik =====
     const handleLegendClick = (dataKey) => {
