@@ -1,5 +1,7 @@
-*.json
-*firebase-adminsdk*
-serviceAccountKey.json
-backend/*.json
+backend/serviceAccountKey.json
+*firebase-adminsdk*.json
 .env
+node_modules/
+dist/
+.vscode/
+
