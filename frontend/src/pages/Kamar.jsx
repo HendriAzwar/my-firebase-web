@@ -12,41 +12,37 @@ import kamarKosIcon from '../assets/kamarkos.svg';
 import translations from '../components/Bahasa.js';
 import { Link } from 'react-router-dom';
 import { useRef } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Kamar = () => {
-    const dropdownRef = useRef(null);
-    const globeRef = useRef(null);
-    const otherMenuRef = useRef(null);
-    const otherIconRef = useRef(null);
+    // ==================== FRONTEND MANAGEMENT ====================
+    // ===== Pengaturan dark mode =====
     const [darkMode, setDarkMode] = useState(() => {
         const savedMode = localStorage.getItem('darkMode');
         return savedMode === 'true'; 
     });
+    useEffect(() => {
+        document.body.className = darkMode ? 'kamar-dark-mode' : 'kamar-light-mode';
+        localStorage.setItem('darkMode', darkMode);
+    }, [darkMode]);
+
+    // ===== Bahasa =====
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
-    const t = translations[language];
-    const toggleSidebar = () => {
-        const sidebar = document.getElementById("kamar-sidebar");
-        if (sidebar) {
-            sidebar.classList.toggle("kamar-open-sidebar");
-        }
-    };
-    const closeSidebar = () => {
-        const sidebar = document.getElementById("kamar-sidebar");
-        if (sidebar) {
-            sidebar.classList.remove("kamar-open-sidebar");
-        }
-    };
     const handleLanguageChange = (lang) => {
         setLanguage(lang);
         localStorage.setItem('language', lang);
         setShowDropdown(false);
     };
-    useEffect(() => {
-        document.body.className = darkMode ? 'kamar-dark-mode' : 'kamar-light-mode';
-        localStorage.setItem('darkMode', darkMode);
-    }, [darkMode]);
+    const t = translations[language];
+
+    // ===== Menu dropdown =====
+    const dropdownRef = useRef(null);
+    const globeRef = useRef(null);
+    const otherMenuRef = useRef(null);
+    const otherIconRef = useRef(null);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
     useEffect(() => {
         const handleClickOutsideDropdown = (event) => {
             if (
@@ -72,6 +68,20 @@ const Kamar = () => {
             document.removeEventListener('mousedown', handleClickOutsideDropdown);
         };
     }, []);
+
+    // ===== Sidebar =====
+    const toggleSidebar = () => {
+        const sidebar = document.getElementById("kamar-sidebar");
+        if (sidebar) {
+            sidebar.classList.toggle("kamar-open-sidebar");
+        }
+    };
+    const closeSidebar = () => {
+        const sidebar = document.getElementById("kamar-sidebar");
+        if (sidebar) {
+            sidebar.classList.remove("kamar-open-sidebar");
+        }
+    };
     useEffect(() => {
         const handleClickOutside = (event) => {
             const sidebar = document.getElementById("kamar-sidebar");
@@ -90,48 +100,181 @@ const Kamar = () => {
         };
     }, []);
 
-    // Tombol gunakan kamar 
-    const [tombolGunakanKamar, setTombolGunakanKamar] = useState(() => {
-        const stored = localStorage.getItem("tombolGunakanKamar");
-        if (stored) {
-            return JSON.parse(stored);
-        }
-        const initialState = {};
-        for (let i = 1; i <= 11; i++) {
-            initialState[i] = false;
-        }
-        return initialState;
+    // ===== Tombol on/off kamar =====
+    const [kamarPowerStatus, setKamarPowerStatus] = useState({});
+
+const togglePowerStatus = async (roomId) => {
+  const kamar = kamarData.find(k => k.id === roomId);
+  if (!kamar || kamar.status_penggunaan === "OVERLIMIT") {
+    toast.error(`⚠️ Relay kamar ${roomId} dinonaktifkan karena melebihi batas penggunaan listrik.`);
+    return;
+  }
+
+  const newStatus = !kamarPowerStatus[roomId]; // toggle
+
+  setKamarPowerStatus((prevStatus) => ({
+    ...prevStatus,
+    [roomId]: newStatus,
+  }));
+
+  try {
+    await fetch(`${API_BASE_URL}/kamar/${roomId}/relay`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        relay_status: newStatus ? "ON" : "OFF",
+      }),
     });
+  } catch (err) {
+    console.error("Gagal update relay:", err);
+  }
+};
 
-    const [showForm, setShowForm] = useState(false);
-    const [selectedKamarId, setSelectedKamarId] = useState(null);
-    const handleTombolGunakanKamar = (id) => {
-        if (!tombolGunakanKamar[id]) {
-            setSelectedKamarId(id);
-            setShowForm(true);
-        } else {
-            // Jika ingin menonaktifkan kamar tanpa form
-            setTombolGunakanKamar(prev => ({
-                ...prev,
-                [id]: false
-            }));
+
+
+
+    // ===== Translate notifikasi =====
+    const translateStatusPenggunaan = (status) => {
+        if (!status) return null;
+        switch (status.toUpperCase()) {
+            case 'AMAN':
+            return t.infoAman;
+            case 'PERINGATAN':
+            return t.infoPeringatan;
+            case 'OVERLIMIT':
+            return t.infoMelebihi;
+            default:
+            return status; // fallback, kalau belum diterjemahkan
         }
     };
-    const handleSubmitForm = () => {
-        setTombolGunakanKamar(prev => ({
-            ...prev,
-            [selectedKamarId]: true
-        }));
-        setShowForm(false);
+
+    // ===== Fungsi menampilkan notifikasi peringatan =====
+    const showKamarNotifikasi = (kamar) => {
+        if (!kamar) return;
+
+        if (kamar.status_penggunaan === 'PERINGATAN') {
+            toast.warn(`⚠️ Kamar ${kamar.id} hampir melebihi batas penggunaan listrik!`, {
+            position: 'top-right',
+            autoClose: 1000,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            });
+        } else if (kamar.status_penggunaan === 'OVERLIMIT') {
+            toast.error(`❌ Kamar ${kamar.id} telah melebihi batas penggunaan listrik!`, {
+            position: 'top-right',
+            autoClose: 1000,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            });
+        }
     };
 
-    useEffect(() => {
-        localStorage.setItem("tombolGunakanKamar", JSON.stringify(tombolGunakanKamar));
-    }, [tombolGunakanKamar]);
 
-    // Fitur popup pendaftaran kamar
+    // ===== Form untuk registrasi kamar =====
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({
+        nama_lengkap: '',
+        nomor_telepon_pengguna_kos: '',
+        sisa_hari: 30,
+        batas_kwh: ''
+    });
+    const handleFormInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+    const handleSubmitForm = async () => {
+        // Validasi input
+        if (!formData.nama_lengkap.trim() || !formData.nomor_telepon_pengguna_kos.trim()) {
+            toast.error(t.namaDanNomorWajibKamar, { position: 'top-right', autoClose: 2000 });
+            return;
+        }
+        // Submit data
+        try {
+            await registerTenant(selectedKamarId, formData);
+
+            // Sync penggunaan_kwh setelah registrasi
+            await fetch(`${API_BASE_URL}/kamar/${selectedKamarId}/sinkron-kwh`, {
+                method: "POST",
+            });
+
+            toast.success(t.berhasilDaftarKamar, { position: 'top-right', autoClose: 1000 });
+            // Bagian untuk menampilkan notif kedua (peringatan)
+            setShowForm(false);
+            setFormData({ nama_lengkap: '', nomor_telepon_pengguna_kos: '' });
+
+            setTimeout(async () => {
+                const response = await fetch(`${API_BASE_URL}/kamar`);
+                const data = await response.json();
+                setKamarData(data);
+
+                const updatedKamar = data.find(k => k.id === selectedKamarId);
+                showKamarNotifikasi(updatedKamar);
+            }, 300); 
+        } catch (err) {
+            toast.error(t.berhasilGagalKamar, { position: 'top-right', autoClose: 2000 });
+        }
+    };
+
+    // ===== Form untuk edit kamar =====
+    const [showEditForm, setShowEditForm] = useState(false);
+    const [editFormData, setEditFormData] = useState({
+        nama_lengkap: '',
+        nomor_telepon_pengguna_kos: '',
+        batas_kwh: ''
+    });
+    const handleEditFormInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+    const handleEditTenant = (roomData) => {
+        setSelectedKamarId(roomData.id);
+        setSelectedKamarData(roomData);
+        setEditFormData({
+            nama_lengkap: roomData.nama_lengkap,
+            nomor_telepon_pengguna_kos: roomData.nomor_telepon_pengguna_kos,
+            batas_kwh: roomData.batas_kwh || ''
+        });
+        setShowEditForm(true);
+    };
+    const handleSubmitEditForm = async () => {
+        // Validasi input
+        if (!editFormData.nama_lengkap.trim() || !editFormData.nomor_telepon_pengguna_kos.trim()) {
+            toast.error(t.namaDanNomorWajibKamar, { position: 'top-right', autoClose: 2000 });
+            return;
+        }
+        // Submit data
+        try {
+            await updateTenant(selectedKamarId, editFormData);
+            toast.success(t.berhasilEditKamar, { position: 'top-right', autoClose: 1000 });
+            setSelectedKamarData(null);
+            // Bagian nampilin notif kedua
+            setShowEditForm(false);
+            setEditFormData({ nama_lengkap: '', nomor_telepon_pengguna_kos: '' });
+
+            setTimeout(async () => {
+                const response = await fetch(`${API_BASE_URL}/kamar`);
+                const data = await response.json();
+                setKamarData(data);
+
+                const updatedKamar = data.find(k => k.id === selectedKamarId);
+                showKamarNotifikasi(updatedKamar);
+            }, 300); // ⏱️ beri jeda kecil untuk memastikan backend selesai update
+        } catch (err) {
+            alert(err.message || 'Gagal mengupdate data. Silakan coba lagi.');
+        }
+    };
     useEffect(() => {
-        if (showForm) {
+        if (showForm || showEditForm) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'auto';
@@ -140,89 +283,297 @@ const Kamar = () => {
         return () => {
             document.body.style.overflow = 'auto';
         };
-    }, [showForm]);
+    }, [showForm, showEditForm]);
 
-    // Data dummy data tiap kamar
-    const kamar1 = {
-        id: 1,
-        nama_lengkap: "Irman Prayista",
-        nomor_telepon_pengguna_kos: "0882221999",
-        sisa_hari: 30,
-        penggunaan_kwh: 257
+    // Pilih kamar data saat registrasi (Muncul atau Hilangnya Tombol gunakan kamar)
+    const [selectedKamarId, setSelectedKamarId] = useState(null);
+    const [selectedKamarData, setSelectedKamarData] = useState(null);
+    const handleTombolGunakanKamar = (roomData) => {
+        if (roomData.status_kamar === 0) {
+            // Room is empty, show registration form
+            setSelectedKamarId(roomData.id);
+            setShowForm(true);
+        }
     };
-    const kamar2 = {
-        id: 2,
-        nama_lengkap: "Ahmad Harits Burhani",
-        nomor_telepon_pengguna_kos: "0882221888",
-        sisa_hari: 26,
-        penggunaan_kwh: 291
+
+    // ==================== BACKEND DATA MANAGEMENT ====================
+    // backend data
+    const [kamarData, setKamarData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    // API Base URL
+    const API_BASE_URL = 'http://localhost:5000/api';
+    
+    // GET Request - Fetch data dari server
+    const fetchKamarData = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/kamar`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch room data');
+            }
+            const data = await response.json();
+            setKamarData(data);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching room data:', err);
+            setError('Gagal memuat data kamar. Silakan coba lagi.');
+        } finally {
+            setLoading(false);
+        }
     };
-    const kamar3 = {
-        id: 3,
-        nama_lengkap: "Faiz Hibatullah",
-        nomor_telepon_pengguna_kos: "0882221777",
-        sisa_hari: 20,
-        penggunaan_kwh: 223
+    
+    //l data loading
+    useEffect(() => {
+        fetchKamarData();
+    }, []);
+
+    useEffect(() => {
+  // Perbarui status relay berdasarkan data Firestore
+  const updatedStatus = {};
+  kamarData.forEach(kamar => {
+    updatedStatus[kamar.id] = kamar.status_penggunaan !== 'OVERLIMIT';
+  });
+  setKamarPowerStatus(updatedStatus);
+}, [kamarData]);
+
+
+    const convertFirebaseTimestamp = (timestamp) => {
+  if (!timestamp) return null;
+  
+  // Jika timestamp adalah Firebase Timestamp object
+  if (timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  
+  // Jika timestamp adalah object dengan _seconds dan _nanoseconds
+  if (timestamp && timestamp._seconds) {
+    return new Date(timestamp._seconds * 1000);
+  }
+  
+  // Fallback untuk format lain
+  try {
+    return new Date(timestamp);
+  } catch (error) {
+    console.error('Error converting timestamp:', error);
+    return null;
+  }
+};
+
+    // API untuk register tenant (Penyewa kost)
+    const registerTenant = async (roomId, tenantData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/kamar/${roomId}/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(tenantData),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Registration failed');
+            }
+            return result;
+        } catch (err) {
+            console.error('Error registering tenant:', err);
+            throw err;
+        }
     };
-    const kamar4 = {
-        id: 4,
-        nama_lengkap: "Hendri Maulana Azwar",
-        nomor_telepon_pengguna_kos: "0882221666",
-        sisa_hari: 18,
-        penggunaan_kwh: 274
+
+    // API function untuk update tenant (Penyewa kost)
+    const updateTenant = async (roomId, tenantData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/kamar/${roomId}/tenant`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(tenantData),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Update failed');
+            }
+            return result;
+        } catch (err) {
+            console.error('Error updating tenant:', err);
+            throw err;
+        }
     };
-    const kamar5 = {
-        id: 5,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
+
+    // API function untuk delete tenant (Penyewa kost)
+    const deleteTenant = async (roomId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/kamar/${roomId}/tenant`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Delete failed');
+            }
+            return result;
+        } catch (err) {
+            console.error('Error deleting tenant:', err);
+            throw err;
+        }
     };
-    const kamar6 = {
-        id: 6,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
+    
+    // Function untuk delete tenant (Penyewa kost) dengan konfirmasi
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedRoomId, setSelectedRoomId] = useState(null);
+    const handleDeleteTenant = (roomId) => {
+        setSelectedRoomId(roomId);
+        setShowDeleteModal(true);
     };
-    const kamar7 = {
-        id: 7,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
+    const handleConfirmDeleteTenant = async () => {
+        try {
+            const result = await deleteTenant(selectedRoomId);
+            console.log('Tenant deleted:', result);
+            toast.success(t.berhasilHapusKamar, { position: 'top-right', autoClose: 1500 });
+            setTimeout(() => {
+                fetchKamarData();
+                setShowDeleteModal(false);
+                setSelectedRoomId(null);
+            }, 2500);
+        } catch (err) {
+            toast.error(t.gagalHapusKamar, { position: 'top-right', autoClose: 2000 });
+        }
     };
-    const kamar8 = {
-        id: 8,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
+
+    const getStatusColor = (status_penggunaan) => {
+        if (status_penggunaan === 'OVERLIMIT') return 'red';
+        if (status_penggunaan === 'PERINGATAN') return 'orange';
+        return 'green';
     };
-    const kamar9 = {
-        id: 9,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
-    };
-    const kamar10 = {
-        id: 10,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
-    };
-    const kamar11 = {
-        id: 11,
-        nama_lengkap: "-",
-        nomor_telepon_pengguna_kos: "-",
-        sisa_hari: "-",
-        penggunaan_kwh: "-"
-    };
+
+
+    // Update data kamar (Penyewa kost) - Edit dan Hapus
+    const renderKamarItem = (roomData) => {
+    // Ambil status ON/OFF dari state berdasarkan ID kamar
+    let isPowerOn = kamarPowerStatus[roomData.id] !== false; // default true
+
+    // Override ke OFF jika status_penggunaan adalah OVERLIMIT
+    if (roomData.status_penggunaan === 'OVERLIMIT') {
+        isPowerOn = false;
+    }
+
+    const buttonLabel = isPowerOn ? 'NYALA' : 'MATI';
+    const buttonColor = isPowerOn ? '#27ae60' : '#C40000';
+
+        return (
+        <div key={roomData.id} className="kamar-item">
+            <h3>{t.kamarKos} {roomData.id}</h3>
+            <div className="kamar-list">
+                <div className="kamar-keterangan-isi">
+                    <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
+                    <div className="kamar-info">
+                        <p><strong>{roomData.nama_lengkap}</strong></p>
+                        <p>{roomData.nomor_telepon_pengguna_kos}</p>
+                        <p>{roomData.sisa_hari} {roomData.sisa_hari !== '-' ? t.hariPenggunakos : ''}</p>
+                        <p>
+  {roomData.penggunaan_kwh !== '-' && roomData.penggunaan_kwh !== undefined
+    ? `${Number(roomData.penggunaan_kwh).toFixed(2)} kWh`
+    : ''}
+</p>
+
+                        {/* {roomData.status_penggunaan && (<p style={{ color: getStatusColor(roomData.status_penggunaan) }}>Status: {roomData.status_penggunaan}</p>)} */}
+                        <p>{roomData.batas_kwh !== undefined && roomData.batas_kwh !== '-' ? `${t.batasKwhKamar}: ${roomData.batas_kwh} kWh` : ''}</p>
+
+<p>
+  {roomData.tanggal_masuk
+    ? `${t.awalDaftarKamar}: ${convertFirebaseTimestamp(roomData.tanggal_masuk)?.toLocaleDateString('id-ID') || 'Invalid Date'}`
+    : ''}
+</p>
+
+
+
+                    </div>
+                </div>
+                {/* Tombol tiap kamar */}
+                <div className="kamar-tombol-kamar">
+                    {/* Tombol status on/off kamar */}
+                    {roomData.status_penggunaan && (<p style={{ color: getStatusColor(roomData.status_penggunaan) }}>Status: {translateStatusPenggunaan(roomData.status_penggunaan)}</p>)}
+                    <button
+                        className="kamar-on-off"
+                        style={{ backgroundColor: buttonColor }}
+                        onClick={() => togglePowerStatus(roomData.id)}
+                        disabled={roomData.status_penggunaan === 'OVERLIMIT'}
+                    >
+                        {buttonLabel === 'NYALA' ? t.tombolOnKontrol : t.tombolOffKontrol}
+                    </button>
+                    {/* Tombol gunakan kamar atau status "sedang digunakan" */}
+                    <button
+                        className={`kamar-status-gunakan ${roomData.status_kamar ? 'active' : 'inactive'}`}
+                        onClick={() => handleTombolGunakanKamar(roomData)}
+                        disabled={roomData.status_kamar === 1}
+                    >
+                        {roomData.status_kamar ? t.kamarSedangDigunakan : t.gunakanKamar}
+                    </button>
+                    {/* Tombol edit dan hapus setelah gunakan kamar */}
+                    {roomData.status_kamar === 1 && (
+                        <div className="kamar-tombol-edit-hapus">
+                            <button
+                                className="kamar-tombol-edit"
+                                onClick={() => handleEditTenant(roomData)}
+                                title="Edit Data Penghuni"
+                            >
+                                {t.editTombolKamar}
+                            </button>
+                            <button
+                                className="kamar-tombol-hapus"
+                                onClick={() => handleDeleteTenant(roomData.id)}
+                                title="Hapus Penghuni"
+                            >
+                                {t.hapusTombolKamar}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+    if (loading) {
+        return (
+            <div className="kamar-navbar-container">
+                <div className="loading-container" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    height: '100vh' 
+                }}>
+                    <p>Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="kamar-navbar-container">
+                <div className="error-container" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    height: '100vh',
+                    flexDirection: 'column'
+                }}>
+                    <p style={{ color: 'red', marginBottom: '20px' }}>{error}</p>
+                    <button onClick={fetchKamarData}>Coba Lagi</button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="kamar-navbar-container">
+            <ToastContainer />
             <div className="kamar-navbar">
                 <div className="kamar-navbar-left">
                     <button className="kamar-hamburger" onClick={toggleSidebar}>
@@ -243,7 +594,6 @@ const Kamar = () => {
                         />
                         {showNavRightDropDown && (
                             <div className="kamar-navbar-other-dropdown-menu" ref={otherMenuRef}>
-                                {/* untuk Link gunakan a untuk edit CSS */}
                                 <Link to="/kontak">{t.berandaKontak}</Link>
                                 <Link to="/beranda">{t.berandaBeranda}</Link>
                                 <Link to="/akun">{t.berandaAkun}</Link>
@@ -252,7 +602,6 @@ const Kamar = () => {
                     </div>
                     {/* Ukuran Desktop */}
                     <div className="kamar-navbar-right-desktop">
-                        {/* untuk Link gunakan a untuk edit CSS */}
                         <Link to="/kontak">{t.berandaKontak}</Link>
                         <Link to="/beranda">{t.berandaBeranda}</Link>
                         <Link to="/akun">{t.berandaAkun}</Link>
@@ -288,7 +637,6 @@ const Kamar = () => {
                 </div>
             </div>
             <div className="kamar-sidebar" id="kamar-sidebar">
-                {/* untuk Link gunakan a untuk edit CSS */}
                 <Link to="/kamar" onClick={closeSidebar}>{t.berandaKamar}</Link>
                 {/* <Link to="/kontrol" onClick={closeSidebar}>{t.berandaKontrol}</Link> */}
                 <Link to="/grafik" onClick={closeSidebar}>{t.berandaGrafik}</Link>
@@ -296,291 +644,160 @@ const Kamar = () => {
             <div className="kamar-main-content">
                 <div className="kamar-feature-grid">
                     <div className="kamar-grid">
-                        <div className="kamar-item">
-                            {/* --KAMAR 1 */}
-                            <h3>{t.kamarKos} 1</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar1.nama_lengkap}</strong></p>
-                                    <p>{kamar1.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar1.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar1.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar1.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar1.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar1.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                    {/* Pop up ini bisa digunakan di kamar lain meskipun di simpan di 1 kamar */}
-                                    {showForm && (
-                                        <div className="kamar-daftar-overlay">
-                                            <div className="kamar-daftar-container">
-                                                <h2 className="kamar-daftar-title">Pendaftaran Kamar</h2>
-                                                <div className="kamar-daftar-content">
-                                                    <div className="kamar-daftar-left">
-                                                        <h3>Kamar {selectedKamarId}</h3>
-                                                            <div className="kamar-daftar-icon">
-                                                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-daftar-icon-kamar" />
-                                                            </div>
-                                                    </div>
-                                                    <div className="kamar-daftar-right">
-                                                        <label className="kamar-daftar-labelnama">{t.namaLengkap}</label>
-                                                        <input type="text" className="kamar-daftar-inputnama" placeholder={t.placeholderNamalengkap} />
-                                                        <label className="kamar-daftar-labelnomor">{t.nomorTelepon}</label>
-                                                        <input type="text" className="kamar-daftar-inputnomor" placeholder={t.placeholderNomorTelepon} />
-                                                        <button className="kamar-daftar-button-kamar" onClick={handleSubmitForm}>
-                                                            {t.gunakanKamar}
-                                                        </button>
-                                                        <button className="kamar-daftar-button-tutup" onClick={() => setShowForm(false)}>
-                                                            {t.tutupDaftarKamar}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <p>{t.catatanDaftarKamar}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 2 */}
-                            <h3>{t.kamarKos} 2</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar2.nama_lengkap}</strong></p>
-                                    <p>{kamar2.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar2.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar2.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar2.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar2.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar2.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 3 */}
-                            <h3>{t.kamarKos} 3</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar3.nama_lengkap}</strong></p>
-                                    <p>{kamar3.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar3.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar3.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar3.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar3.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar3.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 4 */}
-                            <h3>{t.kamarKos} 4</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar4.nama_lengkap}</strong></p>
-                                    <p>{kamar4.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar4.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar4.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar4.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar4.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar4.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 5 */}
-                            <h3>{t.kamarKos} 5</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar5.nama_lengkap}</strong></p>
-                                    <p>{kamar5.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar5.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar5.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar5.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar5.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar5.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 6 */}
-                            <h3>{t.kamarKos} 6</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar6.nama_lengkap}</strong></p>
-                                    <p>{kamar6.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar6.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar6.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar6.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar6.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar6.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 7 */}
-                            <h3>{t.kamarKos} 7</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar7.nama_lengkap}</strong></p>
-                                    <p>{kamar7.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar7.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar7.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar7.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar7.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar7.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 8 */}
-                            <h3>{t.kamarKos} 8</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar8.nama_lengkap}</strong></p>
-                                    <p>{kamar8.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar8.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar8.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar8.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar8.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar8.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 9 */}
-                            <h3>{t.kamarKos} 9</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar9.nama_lengkap}</strong></p>
-                                    <p>{kamar9.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar9.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar9.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar9.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar9.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar9.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 10 */}
-                            <h3>{t.kamarKos} 10</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar10.nama_lengkap}</strong></p>
-                                    <p>{kamar10.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar10.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar10.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar10.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar10.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar10.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="kamar-item">
-                            {/* --KAMAR 11 */}
-                            <h3>{t.kamarKos} 11</h3>
-                            <div className="kamar-list">
-                                <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-icon" />
-                                <div className="kamar-info">
-                                    {/* --Data diambil dari dummy di atas */}
-                                    <p><strong>{kamar11.nama_lengkap}</strong></p>
-                                    <p>{kamar11.nomor_telepon_pengguna_kos}</p>
-                                    <p>{kamar11.sisa_hari} {t.hariPenggunakos}</p>
-                                    <p>{kamar11.penggunaan_kwh} kWh</p>
-                                    <button
-                                        className={`kamar-status-button ${tombolGunakanKamar[kamar11.id] ? 'active' : 'inactive'}`}
-                                        onClick={() => {
-                                            handleTombolGunakanKamar(kamar11.id);
-                                            setShowForm(true);
-                                        }}
-                                    >
-                                        {tombolGunakanKamar[kamar11.id] ? t.kamarSedangDigunakan : t.gunakanKamar}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        {kamarData.map(roomData => renderKamarItem(roomData))}
                     </div>
                 </div>
             </div>
+
+            {/* Daftar kamar */}
+            {showForm && (
+                <div className="kamar-daftar-overlay">
+                    <div className="kamar-daftar-container">
+                        <h2 className="kamar-daftar-title">Pendaftaran Kamar</h2>
+                        <div className="kamar-daftar-content">
+                            <div className="kamar-daftar-left">
+                                <h3>{t.kamar} {selectedKamarId}</h3>
+                                <div className="kamar-daftar-icon">
+                                    <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-daftar-icon-kamar" />
+                                </div>
+                            </div>
+                            <div className="kamar-daftar-right">
+                                <label className="kamar-daftar-labelnama">{t.namaLengkap}</label>
+                                <input 
+                                    type="text" 
+                                    name="nama_lengkap"
+                                    className="kamar-daftar-inputnama" 
+                                    placeholder={t.placeholderNamalengkap}
+                                    value={formData.nama_lengkap}
+                                    onChange={handleFormInputChange}
+                                    required
+                                />
+                                <label className="kamar-daftar-labelnomor">{t.nomorTelepon}</label>
+                                <input 
+                                    type="text" 
+                                    name="nomor_telepon_pengguna_kos"
+                                    className="kamar-daftar-inputnomor" 
+                                    placeholder={t.placeholderNomorTelepon}
+                                    value={formData.nomor_telepon_pengguna_kos}
+                                    onChange={handleFormInputChange}
+                                    required
+                                />
+                                <label className="kamar-daftar-labelbatas">{t.labelBatasKwh}</label>
+                                <input 
+                                    type="number" 
+                                    name="batas_kwh"
+                                    className="kamar-daftar-inputbatas" 
+                                    placeholder={t.placeholderBatasKwh}
+                                    value={formData.batas_kwh}
+                                    onChange={handleFormInputChange}
+                                    required
+                                />
+                                <label className="kamar-daftar-labelsisa">{t.labelSisaHari}</label>
+                                <input 
+                                    type="number" 
+                                    name="sisa_hari"
+                                    className="kamar-daftar-inputsisa" 
+                                    placeholder={t.placeholderSisaHari}
+                                    value={formData.sisa_hari}
+                                    onChange={handleFormInputChange}
+                                    required
+                                />
+                                <button className="kamar-daftar-button-kamar" onClick={handleSubmitForm}>
+                                    {t.gunakanKamar}
+                                </button>
+                                <button className="kamar-daftar-button-tutup" onClick={() => setShowForm(false)}>
+                                    {t.tutupDaftarKamar}
+                                </button>
+                            </div>
+                        </div>
+                        <p>{t.catatanDaftarKamar}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Kamar */}
+            {showEditForm && (
+                <div className="kamar-daftar-overlay">
+                    <div className="kamar-daftar-container">
+                        <h2 className="kamar-daftar-title">{t.editJudul}</h2>
+                        <div className="kamar-daftar-content">
+                            <div className="kamar-daftar-left">
+                                <h3>{t.kamar} {selectedKamarId}</h3>
+                                <div className="kamar-daftar-icon">
+                                    <img src={kamarKosIcon} alt="Kamar Icon" className="kamar-daftar-icon-kamar" />
+                                </div>
+                                {selectedKamarData && (
+                                    <div className="kamar-data-sedang-digunakan">
+                                        <table>
+                                            <tbody>
+                                            <tr>
+                                                <td>{t.labelSisaHari}</td>
+                                                <td>: {selectedKamarData.sisa_hari}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>{t.editPenggunaan}</td>
+                                                <td>: {selectedKamarData.penggunaan_kwh} kWh</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="kamar-daftar-right">
+                                <label className="kamar-daftar-labelnama">{t.namaLengkap}</label>
+                                <input 
+                                    type="text" 
+                                    name="nama_lengkap"
+                                    className="kamar-daftar-inputnama" 
+                                    placeholder={t.placeholderNamalengkap}
+                                    value={editFormData.nama_lengkap}
+                                    onChange={handleEditFormInputChange}
+                                />
+                                <label className="kamar-daftar-labelnomor">{t.nomorTelepon}</label>
+                                <input 
+                                    type="text" 
+                                    name="nomor_telepon_pengguna_kos"
+                                    className="kamar-daftar-inputnomor" 
+                                    placeholder={t.placeholderNomorTelepon}
+                                    value={editFormData.nomor_telepon_pengguna_kos}
+                                    onChange={handleEditFormInputChange}
+                                />
+                                <label className="kamar-daftar-labelbatas">{t.labelBatasKwh}</label>
+                                <input 
+                                    type="number" 
+                                    name="batas_kwh"
+                                    className="kamar-daftar-inputbatas" 
+                                    placeholder={t.placeholderBatasKwh}
+                                    value={editFormData.batas_kwh}
+                                    onChange={handleEditFormInputChange}
+                                />
+                                <button className="kamar-daftar-button-kamar" onClick={handleSubmitEditForm}>
+                                    {t.editTombolPerbarui}
+                                </button>
+                                <button className="kamar-daftar-button-tutup" onClick={() => setShowEditForm(false)}>
+                                    {t.tombolPembatalan}
+                                </button>
+                            </div>
+                        </div>
+                        <p>{t.editInfo}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Hapus kamar */}
+            {/* <ToastContainer /> */}
+            {showDeleteModal && (
+                <div className="kamar-hapus-overlay">
+                    <div className="kamar-hapus-box">
+                        <p>{t.konfirmasiHapusKamar} {selectedRoomId}?</p>
+                        <div className="kamar-hapus-buttons">
+                            <button onClick={handleConfirmDeleteTenant}>{t.ya}</button>
+                            <button onClick={() => setShowDeleteModal(false)}>{t.tidak}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <footer className="kamar-footer-edit">
                 <img src={copyrightIcon} className="kamar-footer-icon" />
                 <p>{t.berandaHakCipta}</p>

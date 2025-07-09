@@ -1,8 +1,8 @@
 // backend/server.js
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
-import authRoutes from './routes/auth.js';
+// import bodyParser from "body-parser";
+// import authRoutes from './routes/auth.js';
 import graphRoutes from "./routes/graph.js";
 import roomRoutes from "./routes/room.js";
 
@@ -10,9 +10,9 @@ const app = express();
 const PORT = 5000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-app.use('/api/auth', authRoutes);
+// app.use('/api/auth', authRoutes);
 app.use("/api/grafik", graphRoutes);
 app.use("/api", roomRoutes);
 
