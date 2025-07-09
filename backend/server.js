@@ -9,7 +9,9 @@ import roomRoutes from "./routes/room.js";
 const app = express();
 const PORT = 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: "https://golden-seahorse-ff992c.netlify.app" // ganti dengan domain netlifymu
+}));
 app.use(express.json());
 
 // app.use('/api/auth', authRoutes);

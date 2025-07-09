@@ -169,7 +169,8 @@ const Grafik = () => {
         };
     }, []);
 
-    const API_BASE_URL = "https://my-backend-api.onrender.com/api/grafik";
+    const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
+
 
     useEffect(() => {
             const findAvailableMCBs = async () => {
@@ -222,40 +223,40 @@ const Grafik = () => {
 
     // ===== Fetch utama untuk kalender =====
     useEffect(() => {
-        if (!selectedMCB || !startDate || !endDate) return;
+          if (!selectedMCB || !startDate || !endDate) return;
 
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-              const params = new URLSearchParams({
-                startDate: formatDateForAPI(startDate),
-                endDate: formatDateForAPI(endDate),
-              });
+          const fetchData = async () => {
+              setLoading(true);
+              try {
+                const params = new URLSearchParams({
+                  startDate: formatDateForAPI(startDate),
+                  endDate: formatDateForAPI(endDate),
+                });
 
-              const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
-              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-              const json = await res.json();
+                const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const json = await res.json();
 
-              if (json.data) {
-                const orderedData = [...json.data].sort(
-                  (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
-                );
-                setData(orderedData);
-                setSummaryData(json.summary);
-              } else {
+                if (json.data) {
+                  const orderedData = [...json.data].sort(
+                    (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
+                  );
+                  setData(orderedData);
+                  setSummaryData(json.summary);
+                } else {
+                  setData([]);
+                  setSummaryData(null);
+                }
+              } catch (err) {
+                console.error("Gagal mengambil data grafik:", err);
                 setData([]);
                 setSummaryData(null);
+              } finally {
+                setLoading(false);
               }
-            } catch (err) {
-              console.error("Gagal mengambil data grafik:", err);
-              setData([]);
-              setSummaryData(null);
-            } finally {
-              setLoading(false);
-            }
-        };
+          };
 
-        fetchData();
+          fetchData();
       }, [selectedMCB, startDate, endDate]);
 
     // ===== Tombol pengatur visibility garis tertentu pada grafik =====
