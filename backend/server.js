@@ -11,8 +11,9 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({
-  origin: "https://golden-seahorse-ff992c.netlify.app"
+  origin: ["http://localhost:5173", "https://golden-seahorse-ff992c.netlify.app"]
 }));
+
 app.use(express.json());
 
 app.use("/api/grafik", graphRoutes);
