@@ -13,43 +13,37 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 
 const Kontak = () => {
-    const dropdownRef = useRef(null);
-    const globeRef = useRef(null);
-    const otherMenuRef = useRef(null);
-    const otherIconRef = useRef(null);
-    const [darkMode, setDarkMode] = useState(() => {
-        const savedMode = localStorage.getItem('darkMode');
-        return savedMode === 'true';
-    });
+// ============ LANGUAGE ============
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
     const t = translations[language];
-    const toggleSidebar = () => {
-        const sidebar = document.getElementById("kontak-sidebar");
-        if (sidebar) {
-            sidebar.classList.toggle("kontak-open-sidebar");
-        }
-    };
-    const closeSidebar = () => {
-        const sidebar = document.getElementById("kontak-sidebar");
-        if (sidebar) {
-            sidebar.classList.remove("kontak-open-sidebar");
-        }
-    };
     const handleLanguageChange = (lang) => {
         setLanguage(lang);
         localStorage.setItem('language', lang);
         setShowDropdown(false);
     };
+    // ==============================
 
+    // ============ DARK MODE MANAGEMENT ============
+    const [darkMode, setDarkMode] = useState(() => {
+        const savedMode = localStorage.getItem('darkMode');
+        return savedMode === 'true';
+    });
     useEffect(() => {
         document.body.className = darkMode ? 'kontak-dark-mode' : 'kontak-light-mode';
         localStorage.setItem('darkMode', darkMode);
     }, [darkMode]);
+    // ==============================
 
+    // ============ DROPDOWN MANAGEMENT ============
+    const dropdownRef = useRef(null);
+    const globeRef = useRef(null);
+    const otherMenuRef = useRef(null);
+    const otherIconRef = useRef(null);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
     useEffect(() => {
         const handleClickOutsideDropdown = (event) => {
+            // Language dropdown
             if (
                 dropdownRef.current &&
                 !dropdownRef.current.contains(event.target) &&
@@ -59,6 +53,7 @@ const Kontak = () => {
                 setShowDropdown(false);
             }
 
+            // Other menu dropdown
             if (
                 otherMenuRef.current &&
                 !otherMenuRef.current.contains(event.target) &&
@@ -74,29 +69,87 @@ const Kontak = () => {
             document.removeEventListener('mousedown', handleClickOutsideDropdown);
         };
     }, []);
+    // ====================================
 
+    // ============ SIDEBAR MANAGEMENT ============
+    const toggleSidebar = () => {
+        const sidebar = document.getElementById("kontak-sidebar");
+        if (sidebar) {
+            sidebar.classList.toggle("kontak-open-sidebar");
+        }
+    };
+    const closeSidebar = () => {
+        const sidebar = document.getElementById("kontak-sidebar");
+        if (sidebar) {
+            sidebar.classList.remove("kontak-open-sidebar");
+        }
+    };
     useEffect(() => {
-        const handleClickOutside = (event) => {
+        const handleClickOutsideSidebar = (event) => {
             const sidebar = document.getElementById("kontak-sidebar");
             const hamburger = document.querySelector(".kontak-hamburger");
-
             if (
                 sidebar &&
                 !sidebar.contains(event.target) &&
+                hamburger &&
                 !hamburger.contains(event.target)
             ) {
                 sidebar.classList.remove("kontak-open-sidebar");
             }
         };
-
-        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutsideSidebar);
         return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("mousedown", handleClickOutsideSidebar);
         };
     }, []);
+    // =========================================
+
+    const isValidEmail = (email) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const [email, setEmail] = useState('');
+    const [pesan, setPesan] = useState('');
+    const [status, setStatus] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const API_BASE_URL = import.meta.env.VITE_BACKEND_URL_KAMAR;
+
+    const handleKirimPesan = async () => {
+        setLoading(true);
+        setStatus('');
+
+        if (!isValidEmail(email)) {
+            setStatus('Format email tidak valid.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/kontak`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, pesan })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+            setStatus('Pesan berhasil dikirim!');
+            setEmail('');
+            setPesan('');
+            } else {
+            setStatus('Gagal mengirim pesan.');
+            }
+        } catch (error) {
+            setStatus('Terjadi kesalahan saat mengirim pesan.');
+        }
+
+        setLoading(false);
+    };
+
 
     return (
-        <div className="kontak-navbar-container">
+        <div className="kontak-halaman">
             <div className="kontak-navbar">
                 <div className="kontak-navbar-left">
                     <button className="kontak-hamburger" onClick={toggleSidebar}>
@@ -179,17 +232,25 @@ const Kontak = () => {
                             <div className="kontak-form">
                                 <label className="kontak-form-label">{t.email}</label>
                                 <input
-                                    type="email"
-                                    className="kontak-form-input"
-                                    placeholder={t.placeholderEmail}
+                                type="email"
+                                className="kontak-form-input"
+                                placeholder={t.placeholderEmail}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 />
                                 <label className="kontak-form-label">{t.labelPesanAnda}</label>
                                 <textarea
-                                    className="kontak-form-textarea"
-                                    placeholder={t.placeholderPesan}
-                                    rows="6"
+                                className="kontak-form-textarea"
+                                placeholder={t.placeholderPesan}
+                                rows="6"
+                                value={pesan}
+                                onChange={(e) => setPesan(e.target.value)}
                                 />
-                                <button className="kontak-form-button">{t.pesanKirim}</button>
+                                <button className="kontak-form-button" onClick={handleKirimPesan} disabled={loading}>
+                                {loading ? 'Mengirim...' : t.pesanKirim}
+                                </button>
+
+                                {status && <p style={{ marginTop: '10px' }}>{status}</p>}
                             </div>
                         </div>
                     </div>

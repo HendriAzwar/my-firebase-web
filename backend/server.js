@@ -21,7 +21,7 @@ app.use(express.json());
 
 app.use("/api/grafik", graphRoutes);
 app.use("/api", roomRoutes);
-app.use("/api/kontak", sendmailRoutes);
+app.use("/api", sendmailRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Backend API is running successfully 🚀");
