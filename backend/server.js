@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import graphRoutes from "./routes/graph.js";
 import roomRoutes from "./routes/room.js";
+import sendmailRoutes from "./routes/sendmail.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -20,6 +21,7 @@ app.use(express.json());
 
 app.use("/api/grafik", graphRoutes);
 app.use("/api", roomRoutes);
+app.use("/api/kontak", sendmailRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Backend API is running successfully 🚀");
