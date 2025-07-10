@@ -15,6 +15,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { auth, db } from '../firebase';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const Akun = () => {
     // Menu sidebar kiri
@@ -112,16 +114,27 @@ const Akun = () => {
         localStorage.setItem('darkMode', darkMode);
     }, [darkMode]);
 
+    const uid = localStorage.getItem('userId');
+
     // Tampilkan data akun
     const [userData, setUserData] = useState({});
     useEffect(() => {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-            axios.get(`http://localhost:5000/api/auth/user/${userId}`)
-                .then(res => setUserData(res.data))
-                .catch(err => console.error('Gagal mengambil user:', err));
-        }
-    }, []);
+        const fetchUserData = async () => {
+            try {
+                const docRef = doc(db, 'users', uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setUserData(docSnap.data());
+                } else {
+                    toast.error("User tidak ditemukan");
+                }
+            } catch (err) {
+                console.error('Gagal ambil data user:', err);
+                toast.error(t.gagalAmbilData);
+            }
+        };
+        if (uid) fetchUserData();
+    }, [uid]);
     
     // Tombol logout
     const navigate = useNavigate();
@@ -151,37 +164,25 @@ const Akun = () => {
             [id]: value
         }));
     };
-    const handleUpdate = () => {
-        const userId = localStorage.getItem('userId');
-        if (!userId) return;
+
+    const handleUpdate = async () => {
         const payload = {};
-        Object.keys(editData).forEach(key => {
-            if (editData[key].trim() !== '') {
-                payload[key] = editData[key];
-            }
+        Object.keys(editData).forEach((key) => {
+            if (editData[key].trim() !== '') payload[key] = editData[key];
         });
         if (Object.keys(payload).length === 0) return;
-        axios.put(`http://localhost:5000/api/auth/user/${userId}`, payload)
-            .then(res => {
-                toast.success(t.dataBerhasilDiubah, { position: 'top-right', autoClose: 1000 });
-                return axios.get(`http://localhost:5000/api/auth/user/${userId}`);
-            })
-            .then(res => {
-                setUserData(res.data); 
-                setEditData({ full_name: '', phone_number: '', email: '', password: '' }); 
-            })
-            .catch(err => {
-                const errorCode = err.response?.data?.code;
-                if (errorCode === 'EMAIL_ALREADY_EXISTS') {
-                    toast.error(t.emailTelahDigunakan, { position: 'top-right', autoClose: 2000 });
-                } else if (errorCode === 'PHONE_ALREADY_EXISTS') {
-                    toast.error(t.nomorTelahDigunakan, { position: 'top-right', autoClose: 2000 });
-                } else {
-                    toast.error(t.gagalUbahData, { position: 'top-right', autoClose: 2000 });
-                } 
 
-                console.error('Update error:', err);
-            });
+        try {
+            const userRef = doc(db, 'users', uid);
+            await updateDoc(userRef, payload);
+            toast.success(t.dataBerhasilDiubah, { autoClose: 1500 });
+            setEditData({ full_name: '', phone_number: '', email: '', password: '' });
+            const updatedSnap = await getDoc(userRef);
+            setUserData(updatedSnap.data());
+        } catch (error) {
+            console.error('Update error:', error);
+            toast.error(t.gagalUbahData, { autoClose: 2000 });
+        }
     };
 
     // Hapus akun users
@@ -193,26 +194,21 @@ const Akun = () => {
         setStepConfirm(1);
         setConfirmEmail('');
     };
-    const handleConfirmDelete = () => {
+    
+    const handleConfirmDelete = async () => {
         if (confirmEmail !== userData.email) {
-            toast.error(t.gagalHapusAkun, { position: 'top-right', autoClose: 2000 });
+            toast.error(t.gagalHapusAkun, { autoClose: 2000 });
             return;
         }
-        const userId = localStorage.getItem('userId');
-        if (!userId) return;
-        axios.delete(`http://localhost:5000/api/auth/user/${userId}`)
-            .then(() => {
-                toast.success(t.berhasilHapusAkun, { position: 'top-right', autoClose: 1000 });
-                localStorage.removeItem('userId');
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
-            })
-            .catch(err => {
-                toast.error(t.errorHapusAkun, { position: 'top-right', autoClose: 2000 });
-                console.error('Delete error:', err);
-            });
-        setShowDeleteModal(false);
+        try {
+            await deleteDoc(doc(db, 'users', uid));
+            toast.success(t.berhasilHapusAkun, { autoClose: 1500 });
+            localStorage.removeItem('userId');
+            setTimeout(() => navigate('/'), 2000);
+        } catch (error) {
+            console.error('Delete error:', error);
+            toast.error(t.errorHapusAkun, { autoClose: 2000 });
+        }
     };
 
     return (

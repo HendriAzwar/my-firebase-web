@@ -21,32 +21,37 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-
 const Grafik = () => {
     // ===== State untuk MCB yang tersedia =====
     const [availableMCBs, setAvailableMCBs] = useState([]);
     const [selectedMCB, setSelectedMCB] = useState("mcb1");
     const [mcbConfig, setMcbConfig] = useState(null);
+    // =========================================
 
     // ===== State untuk data grafik =====
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
+    // =========================================
 
     // ===== State untuk line selection (dinamis berdasarkan MCB) =====
     const [selectedLines, setSelectedLines] = useState([]);
+    // =========================================
 
     // ===== State untuk penjumlahan data =====
     const [summaryData, setSummaryData] = useState(null);
+    // =========================================
 
     // ===== State untuk filter kalender =====
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    // =========================================
 
     // ===== State untuk translate kamar =====
     const translateRoomName = (name) => {
         const key = name.toLowerCase().replace(/\s/g, "");
         return t[key] || name;
     };
+    // =========================================
 
     // ===== Function untuk format tanggal =====
     const formatDateForAPI = (dateString) => {
@@ -54,12 +59,14 @@ const Grafik = () => {
         const date = new Date(dateString);
         return date.toISOString().split("T")[0]; // Format YYYY-MM-DD
     };
+    // =========================================
 
     // ===== Function untuk mendapatkan tanggal hari ini =====
     const getTodayDate = () => {
         const today = new Date();
         return today.toISOString().split("T")[0];
     };
+    // =========================================
 
     // ===== Helper function untuk mendapatkan tanggal seminggu lalu =====
     const getWeekAgoDate = () => {
@@ -67,6 +74,7 @@ const Grafik = () => {
         weekAgo.setDate(weekAgo.getDate() - 7);
         return weekAgo.toISOString().split("T")[0];
     };
+    // =========================================
 
     // ===== Helper function untuk mendapatkan tanggal seminggu kedepan =====
     const getWeekNextDate = () => {
@@ -74,8 +82,9 @@ const Grafik = () => {
         weekAgo.setDate(weekAgo.getDate() + 7);
         return weekAgo.toISOString().split("T")[0];
     };
+    // =========================================
 
-    // Tombol Garis 3 Sidebar Left
+    // ===== Tombol Garis 3 Sidebar Left =====
     const toggleSidebar = () => {
         const sidebar = document.getElementById("grafik-sidebar");
         if (sidebar) {
@@ -108,11 +117,13 @@ const Grafik = () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+    // ==================================================
 
     // ===== Menu Navbar Lainnya: Kontak, Akun, dan Beranda (Three Dots) =====
     const otherMenuThreeDots = useRef(null);
     const otherIconThreeDots = useRef(null);
     const [showOtherMenuThreeDots, setShowOtherMenuThreeDots] = useState(false);
+    // =========================================
 
     // ===== Bahasa =====
     const globeLanguage = useRef(null);
@@ -128,6 +139,7 @@ const Grafik = () => {
         localStorage.setItem("language", lang);
         setShowDropdownLanguage(false);
     };
+    // =========================================
 
     // ===== Darkmode dan LightMode =====
     const [darkMode, setDarkMode] = useState(() => {
@@ -141,6 +153,7 @@ const Grafik = () => {
             : "grafik-light-mode";
         localStorage.setItem("darkMode", darkMode);
     }, [darkMode]);
+    // =========================================
 
     // ===== Fitur ubah bahasa dan menu lainnya: kontak, beranda, dan akun (Three Dots) =====
     useEffect(() => {
@@ -168,36 +181,37 @@ const Grafik = () => {
             document.removeEventListener("mousedown", handleClickOutsideDropdown);
         };
     }, []);
+    // =========================================
 
     const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-
+    // ===== Fetch untuk cek MCB yang tersedia =====
     useEffect(() => {
-            const findAvailableMCBs = async () => {
-                try {
-                  const res = await fetch(`${API_BASE_URL}/mcb-config`);
-                  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                  const mcbList = await res.json();
+        const findAvailableMCBs = async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/mcb-config`);
+              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+              const mcbList = await res.json();
 
-                  setAvailableMCBs(mcbList);
+              setAvailableMCBs(mcbList);
 
-                  if (mcbList.length > 0) {
-                    const defaultMCB = mcbList[0];
-                    setSelectedMCB(defaultMCB.id);
-                    setMcbConfig(defaultMCB);
+              if (mcbList.length > 0) {
+                const defaultMCB = mcbList[0];
+                setSelectedMCB(defaultMCB.id);
+                setMcbConfig(defaultMCB);
 
-                    const defaultLines = defaultMCB.roomNames.map((_, idx) => `room${idx + 1}`);
-                    setSelectedLines(defaultLines);
-                  }
-                } catch (error) {
-                  console.error("Error fetching MCB config:", error);
-                }
-            };
+                const defaultLines = defaultMCB.roomNames.map(
+                  (_, idx) => `room${idx + 1}`);
+                setSelectedLines(defaultLines);
+              }
+            } catch (error) {
+                console.error("Error fetching MCB config:", error);
+            }
+        };
 
-            findAvailableMCBs();
-        }, []);
-
-
+        findAvailableMCBs();
+    }, []);
+    // ========================================= 
 
     // ===== Set default range data yang mau ditampilkan =====
     useEffect(() => {
@@ -206,6 +220,7 @@ const Grafik = () => {
             setEndDate(getTodayDate());
         }
     }, [selectedMCB]);
+    // ========================================= 
 
     // ===== Update MCB konfigurasi ketika mengganti pilihan MCB =====
     useEffect(() => {
@@ -220,44 +235,45 @@ const Grafik = () => {
             setSelectedLines(defaultLines);
         }
     }, [selectedMCB, availableMCBs]);
+    // ========================================= 
 
     // ===== Fetch utama untuk kalender =====
     useEffect(() => {
-          if (!selectedMCB || !startDate || !endDate) return;
+        if (!selectedMCB || !startDate || !endDate) return;
 
-          const fetchData = async () => {
-              setLoading(true);
-              try {
-                const params = new URLSearchParams({
-                  startDate: formatDateForAPI(startDate),
-                  endDate: formatDateForAPI(endDate),
-                });
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+              const params = new URLSearchParams({
+                startDate: formatDateForAPI(startDate),
+                endDate: formatDateForAPI(endDate),
+              });
 
-                const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                const json = await res.json();
+              const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
+              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+              const json = await res.json();
 
-                if (json.data) {
-                  const orderedData = [...json.data].sort(
-                    (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
-                  );
-                  setData(orderedData);
-                  setSummaryData(json.summary);
-                } else {
-                  setData([]);
-                  setSummaryData(null);
-                }
-              } catch (err) {
-                console.error("Gagal mengambil data grafik:", err);
+              if (json.data) {
+                const orderedData = [...json.data].sort(
+                  (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
+                );
+                setData(orderedData);
+                setSummaryData(json.summary);
+              } else {
                 setData([]);
                 setSummaryData(null);
-              } finally {
-                setLoading(false);
               }
-          };
+            } catch (err) {
+              console.error("Gagal mengambil data grafik:", err);
+              setData([]);
+              setSummaryData(null);
+            } finally {
+              setLoading(false);
+            }
+        };
 
-          fetchData();
-      }, [selectedMCB, startDate, endDate]);
+        fetchData();
+    }, [selectedMCB, startDate, endDate]);
 
     // ===== Tombol pengatur visibility garis tertentu pada grafik =====
     const handleLegendClick = (dataKey) => {
@@ -302,400 +318,424 @@ const Grafik = () => {
     };
 
   // ===== Komponen untuk memfilter tanggal =====
-  const DateFilters = () => {
-    return (
-      <div className="grafik-date-filters">
-          <div className="grafik-filter-tanggal">
-            <label>
-              {t.filterHarianDariTanggal}
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <label>
-              {t.filterHarianSampaiTanggal}
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate}
-            />
-            <button
-              onClick={() => {
-                setStartDate(getTodayDate());
-                setEndDate(getTodayDate());
-              }}
-            >
-              {t.tombolHariIni}
-            </button>
-            <button
-              onClick={() => {
-                setStartDate(getWeekAgoDate());
-                setEndDate(getTodayDate());
-              }}
-            >
-              {t.tombol7Hari}
-            </button>
-            <button
-              onClick={() => {
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                setStartDate(thirtyDaysAgo.toISOString().split("T")[0]);
-                setEndDate(getTodayDate());
-              }}
-            >
-              {t.tombol30Hari}
-            </button>
-            <button
-              className="grafik-tombol-reset"
-              onClick={() => {
-                setStartDate(getWeekAgoDate());
-                setEndDate(getTodayDate());
-              }}
-            >
-              Reset
-            </button>
-          </div>
-      </div>
-    );
-  };
-
-  // ===== Komponen keterangan informasi ketika kursor diarahkan ke grafik =====
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 border rounded shadow-lg">
-          <p className="font-semibold">
-            {new Date(label).toLocaleDateString(
-              language === "en" ? "en-US" : "id-ID",
-              {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }
-            )}
-          </p>
-          {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color }}>
-              {`${entry.name}: ${parseFloat(entry.value).toFixed(2)} kWh`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Format X-axis label
-  const formatXAxisLabel = (value) => {
-    const date = new Date(value);
-    return date.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-    });
-  };
-
-  // ===== Komponen tampilan total/penjumlahan =====
-  const SummaryDisplay = () => {
-    if (!summaryData || !mcbConfig) return null;
-    return (
-      <div className="grafik-ringkasan-grafik">
-        <h4>{t.totalKonsumsi} {mcbConfig.name}</h4>
-        {/* Periode */}
-        <div className="grafik-periode">
-          <p>{t.periodePenggunaan}</p>
-          <div className="grafik-periode-isi">
-            {summaryData.tanggal_mulai && summaryData.tanggal_akhir ? (
-              <>
-                {new Date(summaryData.tanggal_mulai).toLocaleDateString(
-                  "id-ID"
-                )}{" "}
-                -{" "}
-                {new Date(summaryData.tanggal_akhir).toLocaleDateString(
-                  "id-ID"
-                )}
-                <small>
-                  {summaryData.jumlah_hari} {t.day}
-                </small>
-              </>
-            ) : (
-              "Tidak tersedia"
-            )}
-          </div>
-        </div>
-
-        {/* Room Cards */}
-        {summaryData.rooms && summaryData.rooms.length > 0 && (
-          <div className="grafik-ringkasan-kamar-container">
-            {summaryData.rooms.map((room, index) => {
-              const colors = [
-                "blue", "red", "green", "orange", "purple", "brown", "pink", "gray", "cyan", "magenta", "lime"
-              ];
-              const color = colors[index] || "gray";
-
-              return (
-                <div className="grafik-ringkasan-kamar" key={index}>
-                  <div className="grafik-judul-kamar">
-                    {translateRoomName(room.name)}
-                    <div className="grafik-garis-kamar"></div>
-                  </div>
-                  <div className="grafik-kwh-kamar">
-                    {room.total.toFixed(2)} kWh
-                    <span>
-                      Rp{room.tarif.toLocaleString()}
-                    </span>
-                  </div>
+    const DateFilters = () => {
+        return (
+            <div className="grafik-date-filters">
+                <div className="grafik-filter-tanggal">
+                    <div className="grafik-pilih-tanggal-dari">
+                        <div className="grafik-kolom-pilih-tanggal-dari">
+                            <label>
+                                {t.filterHarianDariTanggal}
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div className="grafik-kolom-pilih-tanggal-sampai">
+                            <label>
+                                {t.filterHarianSampaiTanggal}
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                min={startDate}
+                            />
+                        </div>
+                    </div>
+                    <div className="grafik-filter-pilih-tombol">
+                        <button
+                            onClick={() => {
+                                setStartDate(getTodayDate());
+                                setEndDate(getTodayDate());
+                            }}
+                        >
+                            {t.tombolHariIni}
+                        </button>
+                        <button
+                            onClick={() => {
+                                setStartDate(getWeekAgoDate());
+                                setEndDate(getTodayDate());
+                            }}
+                        >
+                            {t.tombol7Hari}
+                        </button>
+                        <button
+                            onClick={() => {
+                                const thirtyDaysAgo = new Date();
+                                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                setStartDate(thirtyDaysAgo.toISOString().split("T")[0]);
+                                setEndDate(getTodayDate());
+                            }}
+                        >
+                            {t.tombol30Hari}
+                        </button>
+                        <button
+                            className="grafik-tombol-reset"
+                            onClick={() => {
+                                setStartDate(getWeekAgoDate());
+                                setEndDate(getTodayDate());
+                            }}
+                        >
+                            Reset
+                        </button>
+                    </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+            </div>
+        );
+    };
+    // ====================================================== 
 
-        {/* Total Keseluruhan */}
-        <div className="grafik-total-keseluruhan">
-          <div className="grafik-judul-total">
-            {t.jumlahPenggunaanPerMcb}
-          </div>
-          <div className="grafik-isi-total">
-            {summaryData.total_keseluruhan.toFixed(2)} kWh
-            <span>
-              Rp{summaryData.tarif_total.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    // ===== Komponen keterangan informasi ketika kursor diarahkan ke grafik =====
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 border rounded shadow-lg">
+                    <p className="font-semibold">
+                        {new Date(label).toLocaleDateString(
+                            language === "en" ? "en-US" : "id-ID",
+                            {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            }
+                        )}
+                    </p>
+                    {payload.map((entry, index) => (
+                        <p key={index} style={{ color: entry.color }}>
+                            {`${entry.name}: ${parseFloat(entry.value).toFixed(2)} kWh`}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
+    // ========================================= 
 
-  // ===== Generate line colors =====
-  const getLineColor = (index) => {
-    const colors = [
-      "#0066CC",
-      "#FF4444",
-      "#00AA00",
-      "#FF8800",
-      "#8800FF",
-      "#AA5500",
-      "#FF4499",
-      "#666666",
-      "#00CCCC",
-      "#CC00CC",
-      "#AAFF00",
-    ];
-    return colors[index] || `hsl(${(index * 137.5) % 360}, 70%, 50%)`;
-  };
+    // ===== Format X-axis label =====
+    const formatXAxisLabel = (value) => {
+        const date = new Date(value);
+        return date.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+        });
+    };
+    // ========================================= 
 
-  return (
-    <div className="grafik-navbar-container">
-      {/* Navbar */}
-      <div className="grafik-navbar">
-        {/* Navbar kiri */}
-        <div className="grafik-navbar-left">
-          <button className="grafik-hamburger" onClick={toggleSidebar}>
-            <img src={hamburgerIcon} alt="Menu Sidebar" />
-          </button>
-          <img src={logo} alt="Logo" className="grafik-logo-web" />
-          <a>Senergy</a>
-        </div>
-        {/* Navbar kanan */}
-        <div className="grafik-navbar-right">
-          {/* Ukuran HandPhone */}
-          <div className="grafik-navbar-other-dropdown">
-            <img
-              ref={otherIconThreeDots}
-              src={tripledotIcon}
-              alt="Menu"
-              className="grafik-other-icon"
-              onClick={() => setShowOtherMenuThreeDots(!showOtherMenuThreeDots)}
-            />
-            {showOtherMenuThreeDots && (
-              <div
-                className="grafik-navbar-other-dropdown-menu"
-                ref={otherMenuThreeDots}
-              >
-                <Link to="/kontak">{t.berandaKontak}</Link>
-                <Link to="/beranda">{t.berandaBeranda}</Link>
-                <Link to="/akun">{t.berandaAkun}</Link>
-              </div>
-            )}
-          </div>
-          {/* Ukuran Desktop */}
-          <div className="grafik-navbar-right-desktop">
-            <Link to="/kontak">{t.berandaKontak}</Link>
-            <Link to="/beranda">{t.berandaBeranda}</Link>
-            <Link to="/akun">{t.berandaAkun}</Link>
-          </div>
-          {/* Garis tegak navbar */}
-          <div className="grafik-garis"></div>
-          {/* Notifikasi */}
-          <img
-            src={notificationIcon}
-            alt="Notifikasi"
-            className="grafik-notifikasi-icon"
-          />
-          {/* Ubah bahasa */}
-          <div className="grafik-language-switch">
-            <img
-              ref={globeLanguage}
-              src={globeIcon}
-              alt="Pilih Bahasa"
-              className="grafik-globe-icon"
-              onClick={() => setShowDropdownLanguage(!showDropdownLanguage)}
-            />
-            {showDropdownLanguage && (
-              <div className="grafik-dropdown-language" ref={dropdownLanguage}>
-                <div onClick={() => handleLanguageChange("id")}>Indonesian</div>
-                <div onClick={() => handleLanguageChange("en")}>English</div>
-              </div>
-            )}
-          </div>
-          {/* Darkmode dan Lightmode */}
-          <button
-            className={
-              "grafik-mode-toggle " +
-              (darkMode ? "grafik-dark" : "grafik-light")
-            }
-            onClick={() => setDarkMode(!darkMode)}
-            title="Toggle Theme"
-          >
-            {darkMode ? (
-              <img
-                src={darkModeIcon}
-                alt="Dark Mode"
-                className="grafik-mode-icon"
-              />
-            ) : (
-              <img
-                src={lightModeIcon}
-                alt="Light Mode"
-                className="grafik-mode-icon"
-              />
-            )}
-          </button>
-        </div>
-      </div>
+    // ===== Komponen tampilan total/penjumlahan =====
+    const SummaryDisplay = () => {
+        if (!summaryData || !mcbConfig) return null;
+        return (
+            <div className="grafik-ringkasan-grafik">
+                <h4>{t.totalKonsumsi} {mcbConfig.name}</h4>
+                {/* Periode */}
+                <div className="grafik-periode">
+                    <p>{t.periodePenggunaan}</p>
+                    <div className="grafik-periode-isi">
+                        {summaryData.tanggal_mulai && summaryData.tanggal_akhir ? (
+                            <>
+                                {new Date(summaryData.tanggal_mulai).toLocaleDateString(
+                                    "id-ID"
+                                )}{" "}
+                                -{" "}
+                                {new Date(summaryData.tanggal_akhir).toLocaleDateString(
+                                    "id-ID"
+                                )}
+                                <small>
+                                    {summaryData.jumlah_hari} {t.day}
+                                </small>
+                            </>
+                        ) : (
+                            "Tidak tersedia"
+                        )}
+                    </div>
+                </div>
 
-      {/* Sidebar (Bar Kiri) */}
-      <div className="grafik-sidebar" id="grafik-sidebar">
-        <Link to="/kamar" onClick={closeSidebar}>
-          {t.berandaKamar}
-        </Link>
-        {/* <Link to="/kontrol" onClick={closeSidebar}>
-          {t.berandaKontrol}
-        </Link> */}
-        <Link to="/grafik" onClick={closeSidebar}>
-          {t.berandaGrafik}
-        </Link>
-      </div>
+                {/* Room Cards */}
+                {summaryData.rooms && summaryData.rooms.length > 0 && (
+                    <div className="grafik-ringkasan-kamar-container">
+                        {summaryData.rooms.map((room, index) => {
+                            const colors = [
+                                "blue", "red", "green", "orange", "purple", "brown", "pink", "gray", "cyan", "magenta", "lime"
+                            ];
+                            const color = colors[index] || "gray";
 
-      {/* Isi website */}
-      <div className="grafik-main-content">
-        <div className="grafik-feature-grid">
-          <div className="grafik">
-            <h3>{t.hasilLaporan}</h3>
+                            return (
+                                <div className="grafik-ringkasan-kamar" key={index}>
+                                    <div className="grafik-judul-kamar">
+                                        {translateRoomName(room.name)}
+                                    </div>
+                                    <div className="grafik-kwh-kamar">
+                                        {room.total.toFixed(2)} kWh
+                                        <span>
+                                            Rp{room.tarif.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
-            {/* MCB Selector */}
-            <MCBSelector />
+                {/* Total Keseluruhan */}
+                <div className="grafik-total-keseluruhan">
+                    <div className="grafik-judul-total">
+                        {t.jumlahPenggunaanPerMcb}
+                    </div>
+                    <div className="grafik-isi-total">
+                        {summaryData.total_keseluruhan.toFixed(2)} kWh
+                        <span>
+                            Rp{summaryData.tarif_total.toLocaleString()}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
-            {/* Date Filters */}
-            <DateFilters />
+    // ===== Generate line colors =====
+    const getLineColor = (index) => {
+        const colors = [
+            "#0066CC",
+            "#FF4444",
+            "#00AA00",
+            "#FF8800",
+            "#8800FF",
+            "#AA5500",
+            "#FF4499",
+            "#666666",
+            "#00CCCC",
+            "#CC00CC",
+            "#AAFF00",
+        ];
+        return colors[index] || `hsl(${(index * 137.5) % 360}, 70%, 50%)`;
+    };
 
-            <div className="grafik-header">
-              <h1>{mcbConfig ? mcbConfig.name : "Loading..."}</h1>
+    return (
+        <div className="grafik-navbar-container">
+            {/* Navbar */}
+            <div className="grafik-navbar">
+                {/* Navbar kiri */}
+                <div className="grafik-navbar-left">
+                    <button className="grafik-hamburger" onClick={toggleSidebar}>
+                        <img src={hamburgerIcon} alt="Menu Sidebar" />
+                    </button>
+                    <img src={logo} alt="Logo" className="grafik-logo-web" />
+                    <a>Senergy</a>
+                </div>
+                {/* Navbar kanan */}
+                <div className="grafik-navbar-right">
+                    {/* Ukuran HandPhone */}
+                    <div className="grafik-navbar-other-dropdown">
+                        <img
+                            ref={otherIconThreeDots}
+                            src={tripledotIcon}
+                            alt="Menu"
+                            className="grafik-other-icon"
+                            onClick={() => setShowOtherMenuThreeDots(!showOtherMenuThreeDots)}
+                        />
+                        {showOtherMenuThreeDots && (
+                            <div
+                                className="grafik-navbar-other-dropdown-menu"
+                                ref={otherMenuThreeDots}
+                            >
+                                <Link to="/kontak">{t.berandaKontak}</Link>
+                                <Link to="/beranda">{t.berandaBeranda}</Link>
+                                <Link to="/akun">{t.berandaAkun}</Link>
+                            </div>
+                        )}
+                    </div>
+                    {/* Ukuran Desktop */}
+                    <div className="grafik-navbar-right-desktop">
+                        <Link to="/kontak">{t.berandaKontak}</Link>
+                        <Link to="/beranda">{t.berandaBeranda}</Link>
+                        <Link to="/akun">{t.berandaAkun}</Link>
+                    </div>
+                    {/* Garis tegak navbar */}
+                    <div className="grafik-garis"></div>
+                    {/* Notifikasi */}
+                    <img
+                        src={notificationIcon}
+                        alt="Notifikasi"
+                        className="grafik-notifikasi-icon"
+                    />
+                    {/* Ubah bahasa */}
+                    <div className="grafik-language-switch">
+                        <img
+                            ref={globeLanguage}
+                            src={globeIcon}
+                            alt="Pilih Bahasa"
+                            className="grafik-globe-icon"
+                            onClick={() => setShowDropdownLanguage(!showDropdownLanguage)}
+                        />
+                        {showDropdownLanguage && (
+                            <div className="grafik-dropdown-language" ref={dropdownLanguage}>
+                                <div onClick={() => handleLanguageChange("id")}>Indonesian</div>
+                                <div onClick={() => handleLanguageChange("en")}>English</div>
+                            </div>
+                        )}
+                    </div>
+                    {/* Darkmode dan Lightmode */}
+                    <button
+                        className={
+                            "grafik-mode-toggle " +
+                            (darkMode ? "grafik-dark" : "grafik-light")
+                        }
+                        onClick={() => setDarkMode(!darkMode)}
+                        title="Toggle Theme"
+                    >
+                        {darkMode ? (
+                        <img
+                            src={darkModeIcon}
+                            alt="Dark Mode"
+                            className="grafik-mode-icon"
+                        />
+                        ) : (
+                        <img
+                            src={lightModeIcon}
+                            alt="Light Mode"
+                            className="grafik-mode-icon"
+                        />
+                        )}
+                    </button>
+                </div>
             </div>
 
-            {/* Loading indicator */}
-            {loading && (
-              <div style={{ textAlign: "center", padding: "20px" }}>
-                <p>Memuat data grafik...</p>
-              </div>
-            )}
+            {/* Sidebar (Bar Kiri) */}
+            <div className="grafik-sidebar" id="grafik-sidebar">
+                <Link to="/kamar" onClick={closeSidebar}>
+                    {t.berandaKamar}
+                </Link>
+                {/* <Link to="/kontrol" onClick={closeSidebar}>
+                    {t.berandaKontrol}
+                </Link> */}
+                <Link to="/grafik" onClick={closeSidebar}>
+                    {t.berandaGrafik}
+                </Link>
+            </div>
 
-            {/* Grafik Chart */}
-            {!loading && data.length > 0 && mcbConfig && (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={data}
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderRadius: darkMode ? "20px" : "0px",
-                    padding: "10px",
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="timestamp"
-                    tickFormatter={formatXAxisLabel}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                  />
-                  <YAxis
-                    label={{ value: "kWh", angle: -90, position: "insideLeft" }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    onClick={(e) => handleLegendClick(e.dataKey)}
-                    wrapperStyle={{ cursor: "pointer" }}
-                  />
+            {/* Isi website */}
+            <div className="grafik-main-content">
+                <div className="grafik-feature-grid">
+                    <div className="grafik">
+                        <h3>{t.hasilLaporan}</h3>
 
-                  {/* Generate lines dynamically based on MCB configuration */}
-                  {mcbConfig.roomNames.map((roomName, index) => {
-                    const roomKey = `room${index + 1}`;
-                    const isVisible = selectedLines.includes(roomKey);
+                        {/* MCB Selector */}
+                        <MCBSelector />
 
-                    return (
-                      <Line
-                        key={roomKey}
-                        type="monotone"
-                        dataKey={roomKey}
-                        name={translateRoomName(roomName)}
-                        stroke={getLineColor(index)}
-                        strokeWidth={isVisible ? 2 : 0}
-                        dot={isVisible}
-                        connectNulls={false}
-                        hide={!isVisible}
-                      />
-                    );
-                  })}
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+                        {/* Date Filters */}
+                        <DateFilters />
 
-            {/* No data message */}
-            {!loading && data.length === 0 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "40px",
-                  color: darkMode ? "#ccc" : "#666",
-                }}
-              >
-                <p>📊 Tidak ada data untuk ditampilkan</p>
-                <p style={{ fontSize: "14px", marginTop: "10px" }}>
-                  Coba ubah filter tanggal atau pilih MCB yang berbeda
-                </p>
-              </div>
-            )}
+                        <div className="grafik-header">
+                            <h1>{mcbConfig ? mcbConfig.name : "Loading..."}</h1>
+                        </div>
 
-            {/* Summary Display */}
-            <SummaryDisplay />
-          </div>
+                        {/* Loading indicator */}
+                        {loading && (
+                            <div style={{ textAlign: "center", padding: "20px" }}>
+                                <p>Loading...</p>
+                            </div>
+                        )}
+
+                        {/* Grafik Chart dengan Horizontal Scroll */}
+                        {!loading && data.length > 0 && mcbConfig && (
+                            <div className="grafik-tampil">
+                                {/* Wrapper dengan horizontal scroll */}
+                                <div className="grafik-scroll-wrapper">
+                                    <div className="grafik-scroll-container">
+                                        <ResponsiveContainer width="100%" height={300}>
+                                        <LineChart
+                                            data={data}
+                                        >
+                                            <CartesianGrid 
+                                                strokeDasharray="3 3" 
+                                                // stroke={darkMode ? "#ffffff" : "#ccc"}
+                                            />
+                                            <XAxis
+                                                dataKey="timestamp"
+                                                tickFormatter={formatXAxisLabel}
+                                                interval={0}
+                                                angle={-45}
+                                                textAnchor="end"
+                                                height={80}
+                                                // tick={{ fill: darkMode ? "#ffffff" : "#666" }}
+                                                // axisLine={{ stroke: darkMode ? "#ffffff" : "#666" }}
+                                                // tickLine={{ stroke: darkMode ? "#ffffff" : "#666" }}
+                                            />
+                                            <YAxis
+                                                label={{ 
+                                                    value: "kWh", 
+                                                    angle: -90, 
+                                                    position: "insideLeft",
+                                                    // style: { textAnchor: 'middle', fill: darkMode ? "#ffffff" : "#666" }
+                                                }}
+                                                // tick={{ fill: darkMode ? "#ffffff" : "#666" }}
+                                                // axisLine={{ stroke: darkMode ? "#ffffff" : "#666" }}
+                                                // tickLine={{ stroke: darkMode ? "#ffffff" : "#666" }}
+                                            />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Legend
+                                                onClick={(e) => handleLegendClick(e.dataKey)}
+                                                className="grafik-legend"
+                                                // wrapperStyle={{ color: darkMode ? "#ffffff" : "#666" }}
+                                            />
+                                            {mcbConfig.roomNames.map((roomName, index) => {
+                                                const roomKey = `room${index + 1}`;
+                                                const isVisible = selectedLines.includes(roomKey);
+                                                return (
+                                                    <Line
+                                                    key={roomKey}
+                                                    type="monotone"
+                                                    dataKey={roomKey}
+                                                    name={translateRoomName(roomName)}
+                                                    stroke={getLineColor(index)}
+                                                    strokeWidth={isVisible ? 2 : 0}
+                                                    dot={isVisible}
+                                                    connectNulls={false}
+                                                    hide={!isVisible}
+                                                    />
+                                                );
+                                            })}
+                                        </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* No data message */}
+                        {!loading && data.length === 0 && (
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                    padding: "40px",
+                                    color: darkMode ? "#ccc" : "#666",
+                                }}
+                            >
+                                <p>Tidak ada data untuk ditampilkan</p>
+                                <p style={{ fontSize: "14px", marginTop: "10px" }}>
+                                    Coba ubah filter tanggal atau pilih MCB yang berbeda
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Summary Display */}
+                        <SummaryDisplay />
+                    </div>
+                </div>
+            </div>
+            
+            {/* Footer */}
+            <footer className="grafik-footer-edit">
+                <img src={copyrightIcon} className="grafik-footer-icon" />
+                <p>{t.berandaHakCipta}</p>
+            </footer>
         </div>
-      </div>
-      
-      {/* Footer */}
-      <footer className="grafik-footer-edit">
-        <img src={copyrightIcon} className="grafik-footer-icon" />
-        <p>{t.berandaHakCipta}</p>
-      </footer>
-    </div>
-  );
+    );
 };
 
 export default Grafik;

@@ -3,30 +3,26 @@ import './Masuk_Daftar_Lupa.css';
 import logo from '../assets/LogoWeb.png';
 import translations from '../components/Bahasa.js';
 import globeIcon from '../assets/language.svg';
-import showIcon from '../assets/unhide.svg';
-import hideIcon from '../assets/hide.svg';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
-
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const LupaPassword = () => {
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
     const [showDropdown, setShowDropdown] = useState(false);
     const [email, setEmail] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const t = translations[language];
     const navigate = useNavigate();
+
     const handleLanguageChange = (lang) => {
         setLanguage(lang);
         setShowDropdown(false);
         localStorage.setItem('language', lang);
     };
+
     const changePassword = async (e) => {
         e.preventDefault();
 
@@ -36,22 +32,29 @@ const LupaPassword = () => {
         }
 
         try {
+            // Cek apakah email ada di Firestore
+            const q = query(collection(db, 'users'), where('email', '==', email));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                toast.error("Email tidak terdaftar di sistem kami", { position: 'top-right', autoClose: 2000 });
+                return;
+            }
+
+            // Kirim email reset password via Firebase Auth
             await sendPasswordResetEmail(auth, email);
-            toast.success(t.kataSandiBerhasilDiubah, { position: 'top-right', autoClose: 2000 });
-            setTimeout(() => navigate('/'), 2000);
+            toast.success("Tautan reset telah dikirim ke email kamu", { position: 'top-right', autoClose: 3000 });
+            setTimeout(() => navigate('/'), 3000);
         } catch (error) {
             console.error("Reset password error:", error);
-            const code = error.code;
-
-            if (code === 'auth/user-not-found') {
-            toast.error(t.emailTidakDitemukan, { position: 'top-right', autoClose: 2000 });
+            if (error.code === 'auth/user-not-found') {
+                toast.error("Email tidak ditemukan di Firebase Authentication", { position: 'top-right', autoClose: 2000 });
             } else {
-            toast.error(t.kataSandiGagalDiubah, { position: 'top-right', autoClose: 2000 });
+                toast.error("Gagal mengirim tautan reset. Coba lagi nanti.", { position: 'top-right', autoClose: 2000 });
             }
         }
     };
 
-    
     return (
         <div className="login-flex-container">
             <ToastContainer />
@@ -88,40 +91,6 @@ const LupaPassword = () => {
                         placeholder={t.placeholderEmail}
                         required
                     />
-                    <label htmlFor="new-password">{t.kataSandiBaru}</label>
-                    <div className="login-password-wrapper">
-                        <input
-                            type={showNewPassword ? 'text' : 'password'}
-                            id="new-password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder={t.placeholderKataSandiBaru}
-                            required
-                        />
-                        <img
-                            src={showNewPassword ? showIcon : hideIcon}
-                            alt={showNewPassword ? "Show Password" : "Hide Password"}
-                            className="login-icon"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                        />
-                    </div>
-                    <label htmlFor="confirm-password">{t.konfirmasiKataSandiBaru}</label>
-                    <div className="login-password-wrapper">
-                        <input
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            id="confirm-password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder={t.placeholderKonfirmasiKataSandiBaru}
-                            required
-                        />
-                        <img
-                            src={showConfirmPassword ? showIcon : hideIcon}
-                            alt={showConfirmPassword ? "Show Password" : "Hide Password"}
-                            className="login-icon"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        />
-                    </div>
                     <button type="submit">{t.ubahKataSandi}</button>
                     <p className="login-register">
                         {t.sudahIngatKataSandi} <Link to="/">{t.masukDisini}</Link>
