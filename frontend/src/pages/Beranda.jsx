@@ -15,18 +15,64 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 
 const Beranda = () => {
-    const dropdownRef = useRef(null);
-    const globeRef = useRef(null);
-    const otherMenuRef = useRef(null);
-    const otherIconRef = useRef(null);
+    // === DARK MODE FUNCTIONALITY ===
     const [darkMode, setDarkMode] = useState(() => {
         const savedMode = localStorage.getItem('darkMode');
         return savedMode === 'true';
     });
+    useEffect(() => {
+        document.body.className = darkMode ? 'beranda-dark-mode' : 'beranda-light-mode';
+        localStorage.setItem('darkMode', darkMode);
+    }, [darkMode]);
+    // ================================
+
+    // === LANGUAGE FUNCTIONALITY ===
+    const dropdownRef = useRef(null);
+    const globeRef = useRef(null);
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
     const [showDropdown, setShowDropdown] = useState(false);
-    const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
     const t = translations[language];
+    const handleLanguageChange = (lang) => {
+        setLanguage(lang);
+        localStorage.setItem('language', lang);
+        setShowDropdown(false);
+    };
+    // ================================
+
+    // === NAVIGATION DROPDOWN FUNCTIONALITY ===
+    const otherMenuRef = useRef(null);
+    const otherIconRef = useRef(null);
+    const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
+    useEffect(() => {
+        const handleClickOutsideDropdown = (event) => {
+            // Handle language dropdown
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target) &&
+                globeRef.current &&
+                !globeRef.current.contains(event.target)
+            ) {
+                setShowDropdown(false);
+            }
+
+            // Handle navigation right dropdown
+            if (
+                otherMenuRef.current &&
+                !otherMenuRef.current.contains(event.target) &&
+                otherIconRef.current &&
+                !otherIconRef.current.contains(event.target)
+            ) {
+                setShowNavRightDropDown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutsideDropdown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutsideDropdown);
+        };
+    }, []);
+    // ================================
+
+    // ======== SIDEBAR ========
     const toggleSidebar = () => {
         const sidebar = document.getElementById("beranda-sidebar");
         if (sidebar) {
@@ -39,44 +85,6 @@ const Beranda = () => {
             sidebar.classList.remove("beranda-open-sidebar");
         }
     };
-    const handleLanguageChange = (lang) => {
-        setLanguage(lang);
-        localStorage.setItem('language', lang);
-        setShowDropdown(false);
-    };
-
-    useEffect(() => {
-        document.body.className = darkMode ? 'beranda-dark-mode' : 'beranda-light-mode';
-        localStorage.setItem('darkMode', darkMode);
-    }, [darkMode]);
-
-    useEffect(() => {
-        const handleClickOutsideDropdown = (event) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target) &&
-                globeRef.current &&
-                !globeRef.current.contains(event.target)
-            ) {
-                setShowDropdown(false);
-            }
-
-            if (
-                otherMenuRef.current &&
-                !otherMenuRef.current.contains(event.target) &&
-                otherIconRef.current &&
-                !otherIconRef.current.contains(event.target)
-            ) {
-                setShowNavRightDropDown(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutsideDropdown);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutsideDropdown);
-        };
-    }, []);
-
     useEffect(() => {
         const handleClickOutside = (event) => {
             const sidebar = document.getElementById("beranda-sidebar");
@@ -90,15 +98,15 @@ const Beranda = () => {
                 sidebar.classList.remove("beranda-open-sidebar");
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+    // ================================
 
     return (
-        <div className="beranda-navbar-container">
+        <div className="beranda-halaman">
             <div className="beranda-navbar">
                 <div className="beranda-navbar-left">
                     <button className="beranda-hamburger" onClick={toggleSidebar}>

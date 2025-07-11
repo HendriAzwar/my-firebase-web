@@ -7,7 +7,7 @@ body, html, #root {
     width: 100%;
 }
 
-.kontak-navbar-container {
+.kontak-halaman {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -459,15 +459,17 @@ body, html, #root {
 }
 
 .kontak-dark-mode .kontak-navbar-other-dropdown-menu {
-    box-shadow: 0 0px 7px rgba(255, 255, 255, 0.3);
+    background-color: #424242;
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
 }
 
 .kontak-dark-mode .kontak-navbar-other-dropdown-menu {
-    background-color: white;
+    background-color: #424242;
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
 }
 
 .kontak-dark-mode .kontak-navbar-other-dropdown-menu a {
-    color: #000000;
+    color: #ffffff;
 }
 
 .kontak-dark-mode .kontak-navbar-other-dropdown-menu a:hover,
@@ -497,8 +499,9 @@ body, html, #root {
 }
 
 .kontak-dark-mode .kontak-dropdown-language {
-    background-color: white;
-    box-shadow: 0 0px 10px rgba(255, 255, 255, 0.3);
+    background-color: #424242;
+    color: #ffffff;
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
 }
 
 .kontak-dark-mode .kontak-dropdown-language div:hover,
@@ -528,8 +531,8 @@ body, html, #root {
 
 .kontak-dark-mode .kontak-sidebar a:hover,
 .kontak-dark-mode .kontak-sidebar a:active {
-    background-color: white;
-    color: #111;
+    background-color: #424242;
+    color: #ffffff;
 }
 
 .kontak-dark-mode .kontak-main-content {
@@ -544,6 +547,14 @@ body, html, #root {
     background-color: #ffffff;
     padding: 20px 70px 40px 70px;
     border-radius: 250px;
+}
+
+.kontak-dark-mode .kontak-form {
+    background-color: #424242;
+}
+
+.kontak-dark-mode .kontak-form-label {
+    color: #ffffff;
 }
 
 .kontak-dark-mode .kontak-footer-edit {
@@ -686,6 +697,24 @@ body, html, #root {
     .kontak-footer-edit {
         margin-left: 0 !important;
         justify-content: center;
+    }
+}
+
+@media (max-width: 373px) {
+    .kontak-navbar-left img {
+        margin-right: 8px;
+    }
+
+    .kontak-garis {
+        display: none;
+    }
+
+    .kontak-footer-icon {
+        height: 13px;
+    }
+
+    .kontak-footer-edit p {
+        font-size: 11px;
     }
 }
 /* ------------------------------------------------------------------- */

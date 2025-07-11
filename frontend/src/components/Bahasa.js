@@ -121,9 +121,14 @@ const translations = {
         placeholderSisaHari: "Masukkan sisa hari",
         hariPenggunakos: "Hari",
         labelBatasKwh: "Batas kWh",
+        labelTambahanKwh: "Tambahan kWh",
+        editBiayaTambahan: "Estimasi Biaya",
         batasKwhKamar: "Batas",
         awalDaftarKamar: "Tanggal Daftar",
         labelSisaHari: "Sisa Hari",
+        konfirmasiTambahKwh1: "Anda akan menambah",
+        konfirmasiTambahKwh2: "kWh dengan estimasi biaya",
+        konfirmasiTambahKwh3: "Lanjutkan?",
         tombolOnKontrol: "Nyala",
         tombolOffKontrol: "Mati",
         labelStatusRelay: "Status",
@@ -171,7 +176,9 @@ const translations = {
         infoAman: "Aman",
         infoPeringatan: "Peringatan",
         infoMelebihi: "Melebihi Batas",
-        catatanDaftarKamar: "*Catatan: Perhatikan kembali nama lengkap Anda dan nomor telepon Anda yang aktif."
+        catatanDaftarKamar: "*Catatan: Perhatikan kembali nama lengkap Anda dan nomor telepon Anda yang aktif.",
+        peringatanKwh: "hampir melebihi batas penggunaan listrik!",
+        melebihiKwh: "telah melebihi batas penggunaan listrik!"
     },
     en: {
         selamatDatang:
@@ -295,9 +302,14 @@ const translations = {
         placeholderSisaHari: "Enter remaining day",
         hariPenggunakos: "Day",
         labelBatasKwh: "kWh Limit",
+        labelTambahanKwh: "Additional kWh",
+        editBiayaTambahan: "Estimated Costs",
         awalDaftarKamar: "Registration Date",
         batasKwhKamar: "Limit",
         labelSisaHari: "Remaining Day",
+        konfirmasiTambahKwh1: "You will add",
+        konfirmasiTambahKwh2: "kWh at an estimated cost of",
+        konfirmasiTambahKwh3: "Continue?",
         tombolOnKontrol: "ON",
         tombolOffKontrol: "OFF",
         labelStatusRelay: "Status",
@@ -345,7 +357,9 @@ const translations = {
         infoAman: "Safe",
         infoPeringatan: "Warning",
         infoMelebihi: "Overlimit",
-        catatanDaftarKamar: "*Note: Please double check your full name and your active phone number."
+        catatanDaftarKamar: "*Note: Please double check your full name and your active phone number.",
+        peringatanKwh: "almost exceeded the electricity usage limit!",
+        melebihiKwh: "has exceeded the electricity usage limit!"
     }
 };
 

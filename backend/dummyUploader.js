@@ -11,19 +11,19 @@ function getRandom(min, max) {
   return parseFloat((Math.random() * (max - min) + min).toFixed(2));
 }
 
-async function clearOldData(collectionName) {
-  const snapshot = await db.collection(collectionName).get();
-  const batch = db.batch();
-  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-  await batch.commit();
-  console.log(`✅ Semua data pada ${collectionName} dihapus.`);
-}
+// async function clearOldData(collectionName) {
+//   const snapshot = await db.collection(collectionName).get();
+//   const batch = db.batch();
+//   snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+//   await batch.commit();
+//   console.log(`✅ Semua data pada ${collectionName} dihapus.`);
+// }
 
 async function uploadDummyData() {
   const collectionName = "monitoring_listrik_mcb1";
-  await clearOldData(collectionName);
+  // await clearOldData(collectionName);
 
-  const baseDate = new Date("2025-06-01");
+  const baseDate = new Date("2025-07-11");
   let id = 1;
 
   for (let day = 0; day < 40; day++) {

@@ -227,6 +227,7 @@ body, html {
     margin: 0;
     font-size: 25px;
     font-weight: bold;
+    text-align: left;
 }
 
 .grafik-header h1 {
@@ -234,6 +235,7 @@ body, html {
     padding: 20px 0px;
     font-size: 35px;
     font-weight: bold;
+    text-align: left;
 } 
 
 /* ========= Grafik Pilih MCB ========== */
@@ -277,6 +279,7 @@ body, html {
     font-size: 12px;
     margin-top: 15px;
     font-family: Arial, sans-serif;
+    text-align: left;
 }
 
 /* ========== Filter Grafik ========== */

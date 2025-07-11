@@ -274,6 +274,7 @@ const Grafik = () => {
 
         fetchData();
     }, [selectedMCB, startDate, endDate]);
+    // =========================================
 
     // ===== Tombol pengatur visibility garis tertentu pada grafik =====
     const handleLegendClick = (dataKey) => {
@@ -286,6 +287,7 @@ const Grafik = () => {
                     : [dataKey] // Show only clicked one
         );
     };
+    // =========================================
 
     // ===== Komponen untuk memfilter MCB =====
     const MCBSelector = () => {
@@ -316,8 +318,9 @@ const Grafik = () => {
             </div>
         );
     };
+    // =========================================
 
-  // ===== Komponen untuk memfilter tanggal =====
+    // ===== Komponen untuk memfilter tanggal =====
     const DateFilters = () => {
         return (
             <div className="grafik-date-filters">
