@@ -518,9 +518,9 @@ const Kamar = () => {
                         <div className="kamar-info">
                             <p><strong>{roomData.nama_lengkap}</strong></p>
                             <p>{roomData.nomor_telepon_pengguna_kos}</p>
-                            <p>{roomData.sisa_hari} {roomData.sisa_hari !== '-' ? t.hariPenggunakos : ''}</p>
-                            <p>{roomData.penggunaan_kwh !== '-' && roomData.penggunaan_kwh !== undefined? `${Number(roomData.penggunaan_kwh).toFixed(2)} kWh`: ''}</p>
-                            <p>{roomData.batas_kwh !== undefined && roomData.batas_kwh !== '-' ? `${t.batasKwhKamar}: ${roomData.batas_kwh} kWh` : ''}</p>
+                            <p>{t.sisa} : {roomData.sisa_hari} {roomData.sisa_hari !== '-' ? t.hariPenggunakos : ''}</p>
+                            <p>{t.editPenggunaan} : {typeof roomData.penggunaan_kwh === 'number' && !isNaN(roomData.penggunaan_kwh)? `${roomData.penggunaan_kwh.toFixed(2)} kWh`: '-'}</p>
+                            <p>{roomData.batas_kwh !== undefined && roomData.batas_kwh !== '-' ? `${t.batasKwhKamar} : ${roomData.batas_kwh} kWh` : ''}</p>
                             <p>{roomData.tanggal_masuk? `${t.awalDaftarKamar}: ${convertFirebaseTimestamp(roomData.tanggal_masuk)?.toLocaleDateString('id-ID') || 'Invalid Date'}`: ''}</p>
                         </div>
                     </div>
@@ -574,21 +574,6 @@ const Kamar = () => {
             </div>
         );
     };
-
-    if (loading) {
-        return (
-            <div className="kamar-navbar-container">
-                <div className="loading-container" style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    height: '100vh' 
-                }}>
-                    <p>Loading...</p>
-                </div>
-            </div>
-        );
-    }
 
     if (error) {
         return (
@@ -677,11 +662,23 @@ const Kamar = () => {
                 {/* <Link to="/kontrol" onClick={closeSidebar}>{t.berandaKontrol}</Link> */}
                 <Link to="/grafik" onClick={closeSidebar}>{t.berandaGrafik}</Link>
             </div>
+            {/* Konten utama */}
             <div className="kamar-main-content">
                 <div className="kamar-feature-grid">
-                    <div className="kamar-grid">
-                        {kamarData.map(roomData => renderKamarItem(roomData))}
-                    </div>
+                    {loading ? (
+                        <div className="kamar-loading">
+                            <p>Loading...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="error-container">
+                            <p style={{ color: "red" }}>{error}</p>
+                            <button onClick={fetchKamarData}>Coba Lagi</button>
+                        </div>
+                    ) : (
+                        <div className="kamar-grid">
+                            {kamarData.map(roomData => renderKamarItem(roomData))}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -767,12 +764,12 @@ const Kamar = () => {
                                         <table>
                                             <tbody>
                                             <tr>
-                                                <td>{t.labelSisaHari}</td>
-                                                <td>: {selectedKamarData.sisa_hari}</td>
+                                                <td>{t.sisa}</td>
+                                                <td>: {selectedKamarData.sisa_hari} {t.hariPenggunakos}</td>
                                             </tr>
                                             <tr>
                                                 <td>{t.editPenggunaan}</td>
-                                                <td>: {selectedKamarData.penggunaan_kwh} kWh</td>
+                                                <td>: {selectedKamarData.penggunaan_kwh.toFixed(2)} kWh</td>
                                             </tr>
                                             </tbody>
                                         </table>
@@ -814,7 +811,7 @@ const Kamar = () => {
                                         type="number" 
                                         name="tambahan_kwh"
                                         className="kamar-daftar-inputtambahan" 
-                                        placeholder="Masukkan tambahan kWh"
+                                        placeholder={t.placeholderTambahanKwh}
                                         value={editFormData.tambahan_kwh}
                                         onChange={(e) =>
                                             setEditFormData(prev => ({

@@ -12,20 +12,36 @@ import Grafik from './pages/Grafikcopy';
 import Kamar from './pages/Kamarcopy'; 
 import Kontak from './pages/Kontak'; 
 import Kontrol from './pages/Kontrol';  
+import PrivateRoute from './components/PrivateRoute';
 
 function App() {
     return (
         <div>
             <Routes>
+                {/* Public routes */}
                 <Route path="/" element={<Masuk />} />
                 <Route path="/daftar" element={<Daftar />} />
                 <Route path="/lupa-password" element={<LupaPassword />} />
-                <Route path="/beranda" element={<Beranda />} />
-                <Route path="/akun" element={<Akun />} />
-                <Route path="/grafik" element={<Grafik />} />
-                <Route path="/kamar" element={<Kamar />} />
-                <Route path="/kontak" element={<Kontak />} />
-                <Route path="/kontrol" element={<Kontrol />} />
+
+                {/* Private routes */}
+                <Route path="/beranda" element={
+                    <PrivateRoute><Beranda /></PrivateRoute>
+                } />
+                <Route path="/akun" element={
+                    <PrivateRoute><Akun /></PrivateRoute>
+                } />
+                <Route path="/grafik" element={
+                    <PrivateRoute><Grafik /></PrivateRoute>
+                } />
+                <Route path="/kamar" element={
+                    <PrivateRoute><Kamar /></PrivateRoute>
+                } />
+                <Route path="/kontak" element={
+                    <PrivateRoute><Kontak /></PrivateRoute>
+                } />
+                <Route path="/kontrol" element={
+                    <PrivateRoute><Kontrol /></PrivateRoute>
+                } />
             </Routes>
         </div>
     );
