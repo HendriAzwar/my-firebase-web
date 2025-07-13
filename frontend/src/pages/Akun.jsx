@@ -17,6 +17,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth'; // pastikan sudah impor
 
 const Akun = () => {
     // Menu sidebar kiri
@@ -140,7 +141,7 @@ const Akun = () => {
     const navigate = useNavigate();
     const handleLogout = () => {
         localStorage.removeItem('userId');
-        toast.success(t.keluarBerhasil, { position: 'top-right', autoClose: 1000 });
+        toast.success(t.keluarBerhasil, { position: 'top-right', autoClose: 1000, closeButton: false, pauseOnHover: false });
         setTimeout(() => navigate('/'), 2000);
     };
 
@@ -175,7 +176,7 @@ const Akun = () => {
         try {
             const userRef = doc(db, 'users', uid);
             await updateDoc(userRef, payload);
-            toast.success(t.dataBerhasilDiubah, { autoClose: 1500 });
+            toast.success(t.dataBerhasilDiubah, { position: 'top-right', autoClose: 1000, closeButton: false, pauseOnHover: false });
             setEditData({ full_name: '', phone_number: '', email: '', password: '' });
             const updatedSnap = await getDoc(userRef);
             setUserData(updatedSnap.data());

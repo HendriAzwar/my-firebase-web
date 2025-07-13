@@ -11,7 +11,6 @@ import Akun from './pages/Akun';
 import Grafik from './pages/Grafikcopy'; 
 import Kamar from './pages/Kamarcopy'; 
 import Kontak from './pages/Kontak'; 
-import Kontrol from './pages/Kontrol';  
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
@@ -38,9 +37,6 @@ function App() {
                 } />
                 <Route path="/kontak" element={
                     <PrivateRoute><Kontak /></PrivateRoute>
-                } />
-                <Route path="/kontrol" element={
-                    <PrivateRoute><Kontrol /></PrivateRoute>
                 } />
             </Routes>
         </div>

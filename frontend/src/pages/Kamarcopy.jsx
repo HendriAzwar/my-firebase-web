@@ -106,7 +106,6 @@ const Kamar = () => {
     }, []);
     // ==============================
 
-    
 
     // ===== API Base URL =====
     const API_BASE_URL = import.meta.env.VITE_BACKEND_URL_KAMAR;
@@ -147,7 +146,7 @@ const Kamar = () => {
             return;
         }
 
-        const newStatus = !kamarPowerStatus[roomId]; // toggle
+        const newStatus = !kamarPowerStatus[roomId]; 
 
         setKamarPowerStatus((prevStatus) => ({
             ...prevStatus,
@@ -191,20 +190,18 @@ const Kamar = () => {
         if (!kamar) return;
 
         if (kamar.status_penggunaan === 'PERINGATAN') {
-            toast.warn(`⚠️ Kamar ${kamar.id} hampir melebihi batas penggunaan listrik!`, {
+            toast.warn(`⚠️ ${t.kamar} ${kamar.id} ${t.peringatanKwh}`, {
             position: 'top-right',
-            autoClose: 1000,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
+            autoClose: 2000,
+            closeButton: false, 
+            pauseOnHover: false
             });
         } else if (kamar.status_penggunaan === 'OVERLIMIT') {
-            toast.error(`❌ Kamar ${kamar.id} telah melebihi batas penggunaan listrik!`, {
+            toast.error(`❌ ${t.kamar} ${kamar.id} ${t.melebihiKwh}`, {
             position: 'top-right',
-            autoClose: 1000,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
+            autoClose: 2000,
+            closeButton: false, 
+            pauseOnHover: false
             });
         }
     };
@@ -259,7 +256,7 @@ const Kamar = () => {
     const handleSubmitForm = async () => {
         // Validasi input
         if (!formData.nama_lengkap.trim() || !formData.nomor_telepon_pengguna_kos.trim()) {
-            toast.error(t.namaDanNomorWajibKamar, { position: 'top-right', autoClose: 2000 });
+            toast.error(t.namaDanNomorWajibKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
             return;
         }
         // Submit data
@@ -271,7 +268,7 @@ const Kamar = () => {
                 method: "POST",
             });
 
-            toast.success(t.berhasilDaftarKamar, { position: 'top-right', autoClose: 1000 });
+            toast.success(t.berhasilDaftarKamar, { position: 'top-right', autoClose: 1500, closeButton: false, pauseOnHover: false });
             // Bagian untuk menampilkan notif kedua (peringatan)
             setShowForm(false);
             setFormData({ nama_lengkap: '', nomor_telepon_pengguna_kos: '' });
@@ -286,7 +283,7 @@ const Kamar = () => {
                 showKamarNotifikasi(updatedKamar);
             }, 300); 
         } catch (err) {
-            toast.error(t.berhasilGagalKamar, { position: 'top-right', autoClose: 2000 });
+            toast.error(t.gagalDaftarKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
         }
     };
     // ==============================
@@ -387,7 +384,7 @@ const Kamar = () => {
         const estimasi = tambahan * tarif;
 
         if (tambahan < 0) {
-            toast.error("Tambahan kWh tidak boleh negatif");
+            toast.error(t.editKwhTidakNegatif, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
             return;
         }
 
@@ -447,14 +444,14 @@ const Kamar = () => {
         try {
             const result = await deleteTenant(selectedRoomId);
             console.log('Tenant deleted:', result);
-            toast.success(t.berhasilHapusKamar, { position: 'top-right', autoClose: 1500 });
+            toast.success(t.berhasilHapusKamar, { position: 'top-right', autoClose: 1500, closeButton: false, pauseOnHover: false });
             setTimeout(() => {
                 fetchKamarData();
                 setShowDeleteModal(false);
                 setSelectedRoomId(null);
             }, 2500);
         } catch (err) {
-            toast.error(t.gagalHapusKamar, { position: 'top-right', autoClose: 2000 });
+            toast.error(t.gagalHapusKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
         }
     };
     // =====================================
@@ -468,7 +465,7 @@ const Kamar = () => {
         setKamarPowerStatus(updatedStatus);
     }, [kamarData]);
 
-
+    // ===== Pengaturan convert timestamp =====
     const convertFirebaseTimestamp = (timestamp) => {
         if (!timestamp) return null;
         
@@ -490,15 +487,17 @@ const Kamar = () => {
             return null;
         }
     };
-
+    // =====================================
+    
+    // ===== Pengaturan warna status =====
     const getStatusColor = (status_penggunaan) => {
         if (status_penggunaan === 'OVERLIMIT') return 'red';
         if (status_penggunaan === 'PERINGATAN') return 'orange';
         return 'green';
     };
+    // =====================================
 
-
-    // Update data kamar (Penyewa kost) - Edit dan Hapus
+    // ===== Update data kamar (Penyewa kost) - Edit dan Hapus =====
     const renderKamarItem = (roomData) => {
         let isPowerOn = kamarPowerStatus[roomData.id] !== false; // default true
 
@@ -574,7 +573,9 @@ const Kamar = () => {
             </div>
         );
     };
+    // =====================================
 
+    // ===== Pengaturan ketika error =====
     if (error) {
         return (
             <div className="kamar-navbar-container">
@@ -591,6 +592,7 @@ const Kamar = () => {
             </div>
         );
     }
+    // =====================================
 
     return (
         <div className="kamar-halaman">

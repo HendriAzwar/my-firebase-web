@@ -517,6 +517,7 @@ const Grafik = () => {
         ];
         return colors[index] || `hsl(${(index * 137.5) % 360}, 70%, 50%)`;
     };
+    // ========================================= 
 
     return (
         <div className="grafik-navbar-container">

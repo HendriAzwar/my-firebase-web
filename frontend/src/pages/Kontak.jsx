@@ -11,6 +11,8 @@ import tripledotIcon from '../assets/other.svg';
 import translations from '../components/Bahasa.js';
 import { Link } from 'react-router-dom';
 import { useRef } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Kontak = () => {
 // ============ LANGUAGE ============
@@ -116,40 +118,61 @@ const Kontak = () => {
     const API_BASE_URL = import.meta.env.VITE_BACKEND_URL_KAMAR;
 
     const handleKirimPesan = async () => {
-        setLoading(true);
-        setStatus('');
+    setLoading(true);
 
-        if (!isValidEmail(email)) {
-            setStatus('Format email tidak valid.');
-            setLoading(false);
-            return;
-        }
+    if (!isValidEmail(email)) {
+        toast.error(t.emailTidakSesuai, {
+            position: 'top-right',
+            autoClose: 2000,
+            closeButton: false,
+            pauseOnHover: false,
+        });
+        setLoading(false);
+        return;
+    }
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/kontak`, {
+    try {
+        const response = await fetch(`${API_BASE_URL}/kontak`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, pesan })
-            });
+            body: JSON.stringify({ email, pesan }),
+        });
 
-            const result = await response.json();
-            if (response.ok) {
-            setStatus('Pesan berhasil dikirim!');
+        const result = await response.json();
+
+        if (response.ok) {
+            toast.success(t.pesanBerhasilTerkirim, {
+                position: 'top-right',
+                autoClose: 1500,
+                closeButton: false,
+                pauseOnHover: false,
+            });
             setEmail('');
             setPesan('');
-            } else {
-            setStatus('Gagal mengirim pesan.');
-            }
-        } catch (error) {
-            setStatus('Terjadi kesalahan saat mengirim pesan.');
+        } else {
+            toast.error(t.pesanGagalTerkirim, {
+                position: 'top-right',
+                autoClose: 2000,
+                closeButton: false,
+                pauseOnHover: false,
+            });
         }
+    } catch (error) {
+        toast.error(t.errorKirimPesan, {
+            position: 'top-right',
+            autoClose: 2000,
+            closeButton: false,
+            pauseOnHover: false,
+        });
+    }
 
-        setLoading(false);
-    };
+    setLoading(false);
+};
 
 
     return (
         <div className="kontak-halaman">
+            <ToastContainer />
             <div className="kontak-navbar">
                 <div className="kontak-navbar-left">
                     <button className="kontak-hamburger" onClick={toggleSidebar}>

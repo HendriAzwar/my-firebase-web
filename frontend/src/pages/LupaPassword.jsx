@@ -91,7 +91,7 @@ const LupaPassword = () => {
                         placeholder={t.placeholderEmail}
                         required
                     />
-                    <button type="submit">{t.ubahKataSandi}</button>
+                    <button type="submit">{t.pesanKirim}</button>
                     <p className="login-register">
                         {t.sudahIngatKataSandi} <Link to="/">{t.masukDisini}</Link>
                     </p>
