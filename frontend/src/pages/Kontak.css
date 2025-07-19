@@ -204,6 +204,9 @@ body, html, #root {
 }
 
 .kontak-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     margin-left: 180px;
     padding: 15px 65px 30px 70px;
 }
@@ -572,6 +575,18 @@ body, html, #root {
 /* ------------------------------------------------------------------- */
 
 /* ----------Responsif------------------------------------------------ */
+@media (max-width: 1150px) {
+    .kontak-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .kontak-dark-mode .kontak-logo {
+        border-radius: 20px;
+    }
+}
+
 @media (max-width: 973px) {
     .kontak-hamburger img {
         display: block;
@@ -588,16 +603,6 @@ body, html, #root {
 
     .kontak-main-content {
         margin-left: 0 !important;
-    }
-
-    .kontak-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-
-    .kontak-dark-mode .kontak-logo {
-        border-radius: 20px;
     }
     
     .kontak-footer-edit {

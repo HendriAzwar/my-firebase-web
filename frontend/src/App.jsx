@@ -8,8 +8,8 @@ import Daftar from './pages/Daftar';
 import LupaPassword from './pages/LupaPassword';
 import Beranda from './pages/Beranda';
 import Akun from './pages/Akun'; 
-import Grafik from './pages/Grafikcopy'; 
-import Kamar from './pages/Kamarcopy'; 
+import Grafik from './pages/Grafik'; 
+import Kamar from './pages/Kamar'; 
 import Kontak from './pages/Kontak'; 
 import PrivateRoute from './components/PrivateRoute';
 

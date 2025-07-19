@@ -1,4 +1,4 @@
- * {
+* {
     box-sizing: border-box;
 }
 
@@ -6,6 +6,42 @@ body, html, #root {
     font-family: Arial, sans-serif;
     width: 100%;
 }
+
+/* ======== gagal memuat kamar ========= */
+.kamar-error-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.kamar-error {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.kamar-error p {
+    font-family: Arial, sans-serif;
+    font-size: 17px;
+    font-weight: bold;
+    color: #000000;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+.kamar-error button {  
+    width: fit-content;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    padding: 10px 40px;
+    margin-top: 25px;
+    border-radius: 15px;
+    background-color: #000000;
+}
+/* ===================================== */
 
 .kamar-halaman {
     display: flex;
@@ -212,6 +248,9 @@ body, html, #root {
 }
 
 .kamar-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     margin-left: 180px;
     padding: 15px 65px 30px 70px;
 }
@@ -224,10 +263,30 @@ body, html, #root {
     min-height: 70vh;
 }
 
+/*========== Loading ========*/
 .kamar-loading {
-    text-align: center;
-    padding: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* horizontal */
+    align-items: center; /* vertikal */
+    height: 80vh; 
+    width: 100%;
+    flex-direction: column;
 }
+
+.kamar-loading-spinner {
+    animation: kamar-rotate 1s linear infinite;
+}
+
+@keyframes kamar-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+/* ========================= */
 
 .kamar-grid {
     display: flex;
@@ -284,13 +343,15 @@ body, html, #root {
 }
 
 .kamar-tombol-kamar label {
+    display: flex; 
+    flex-direction: column;
     font-size: 15px;
     padding-left: 15px;
     font-family: Arial, sans-serif;
     text-align: left;
 }
 
-.kamar-status-label.lebihbatas {
+.kamar-status-label.lebihBatas {
   color: #ff0000 !important;
 }
 
@@ -298,7 +359,7 @@ body, html, #root {
   color: #ee9300 !important;
 }
 
-.kamar-status-label.normal {
+.kamar-status-label.aman {
   color: #00b600 !important;
 }
 
@@ -356,6 +417,12 @@ body, html, #root {
 .kamar-tombol-edit:hover,
 .kamar-tombol-edit:active {
     background-color: #686868;
+}
+
+.kamar-estimasi-biaya {
+    font-size: 14px;
+    font-weight: bold;
+    padding-left: 10px;
 }
 
 .kamar-tombol-hapus {
@@ -687,15 +754,20 @@ body, html, #root {
 .kamar-light-mode .kamar-info p {
     color: #000000;
 }
-
-.kamar-light-mode .kamar-tombol-kamar label {
-    color: #000000;
-}
 /* ------------------------------------------------------------------- */
 
 /* ----Komponen dalam Dark Mode------------------------------------- */
 .kamar-dark-mode {
     background-color: #2d2d2d;
+}
+
+.kamar-dark-mode .kamar-error p {
+    color: #ffffff;
+}
+
+.kamar-dark-mode .kamar-error button {  
+    color: #000000;
+    background-color: #ffffff;
 }
 
 .kamar-dark-mode .kamar-navbar {
@@ -818,11 +890,7 @@ body, html, #root {
     padding: 10px;
 }
 
-.kamar-dark-mode .kamar-tombol-kamar label {
-    color: #ffffff;
-}
-
-.kamar-dark-mode .kamar-status-label.lebihbatas {
+.kamar-dark-mode .kamar-status-label.lebihBatas {
   color: #ff5555 !important;
 }
 
@@ -830,7 +898,7 @@ body, html, #root {
   color: #ff9d00 !important;
 }
 
-.kamar-dark-mode .kamar-status-label.normal {
+.kamar-dark-mode .kamar-status-label.aman {
   color: #00ff00 !important;
 }
 
@@ -1015,6 +1083,10 @@ body, html, #root {
     }
 
     .kamar-info p {
+        text-align: center;
+    }
+
+    .kamar-tombol-kamar label {
         text-align: center;
     }
 

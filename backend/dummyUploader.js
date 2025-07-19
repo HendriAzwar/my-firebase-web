@@ -50,11 +50,11 @@ async function uploadDummyData() {
     }
   }
 
-  console.log("✅ Selesai upload data dummy!");
+  console.log("Selesai upload data dummy!");
   process.exit();
 }
 
 uploadDummyData().catch((err) => {
-  console.error("❌ Gagal upload data:", err);
+  console.error("Gagal upload data:", err);
   process.exit(1);
 });

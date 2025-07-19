@@ -24,46 +24,65 @@ body {
     overflow: hidden;
     padding: 40px 20px;
 }
-  
-.login-left-column,
-.login-right-column {
+
+/* ======== Notifikasi ======== */
+.Toastify__close-button {
+    all: unset;              
+}
+
+.Toastify__close-button:hover {
+    background: none;
+}
+/* ============================ */
+
+.login-dark-mode {
+    background-color: #ffffff;
+}
+
+/* ======== Logo dan Deskripsi ======== */
+.login-left-column {
     flex: 1;
     padding: 40px;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
-  
+
 .login-logo-wrapper {
     display: flex;
     align-items: center;
     gap: 15px;
     margin-bottom: 20px;
+    justify-content: center;
 }
   
 .login-logo-img {
     width: 200px;
     height: auto;
 }
-  
+
 .login-left-column h1 {
     font-size: 48px;
     font-weight: bold;
 }
-  
+
 .login-description {
     font-size: 18px;
     margin-top: 10px;
     line-height: 1.3;
 }
-  
-.login-right-column h2 {
-    text-align: center;
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 20px;
+/* ======================= */
+
+/* ====== Form Kanan ===== */
+.login-right-column {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
 }
-  
+
 .login-language-switch {
     position: absolute;
     top: 20px;
@@ -73,14 +92,14 @@ body {
     align-items: flex-end;
     z-index: 1000;
 }
-  
+
 .login-globe-icon {
     width: 25px;
     height: 25px;
     cursor: pointer;
     opacity: 1;
 }
-  
+
 .login-dropdown-language {
     margin-top: 10px;
     background-color: white;
@@ -105,24 +124,131 @@ body {
     background-color: #000;
     color: #fff;
 }
+  
+.login-right-column h2 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    margin: 0;
+}
+/* ======================== */
 
-/* Untuk notifikasi berhasil atau tidak */
-.Toastify__close-button {
-    all: unset;              
+/* ========= Phone ========= */
+.login-phone-input-container {
+    display: flex;
+    position: relative;
 }
 
-/* Untuk notifikasi berhasil atau tidak */
-.Toastify__close-button:hover {
-    background: none;
-}  
+.login-phone-prefix {
+    position: absolute;
+    left: 12px;
+    top: 18px;
+    color: #000000;
+    font-size: 14px;
+    z-index: 1;
+}
 
-form label{
+.login-telepon-error-message {
+    position: absolute;
     display: block;
-    margin-top: 15px;
+    color: #e74c3c;
+    font-size: 12px;
+    margin: 5px 0px 0px 10px;
+}
+
+.login-telepon-valid-message {
+    position: absolute;
+    display: block;
+    color: #27ae60;
+    font-size: 12px;
+    margin: 5px 0px 0px 10px;
+}
+
+.login-phone-input {
+    padding-left: 43px !important;
+}
+/* =============================== */
+
+/* ============ Email ============ */
+.login-email-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.login-email-error-message {
+    position: absolute;
+    display: block;
+    color: #e74c3c;
+    font-size: 12px;
+    margin: 5px 0px 0px 10px;
+}
+
+.login-email-valid-message {
+    position: absolute;
+    display: block;
+    color: #27ae60;
+    font-size: 12px;
+    margin: 5px 0px 0px 10px;
+}
+
+/* ======== Password ======== */
+.login-password-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.login-password-input-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.login-password-wrapper .login-icon {
+    position: absolute;
+    right: 15px;
+    top: 16px;
+    width: 20px;
+    cursor: pointer;
+    opacity: 1;
+    z-index: 2;
+}
+
+.login-password-error-message {
+    position: absolute;
+    display: block;
+    color: #e74c3c;
+    font-size: 12px;
+    margin: 5px 0px 0px 10px;
+}
+
+.login-password-valid-message {
+    position: absolute;
+    display: block;
+    color: #27ae60;
+    font-size: 12px;
+    margin: 5px 0px 0px 10px;
+}
+
+.password-strength-indicator {
+    position: absolute;
+    color: #000000;
+    font-size: 12px;
+    right: 50px;
+    top: 19px;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 1;
+}
+/* ============================================= */
+
+/* ======== form email password ======== */
+form label {
+    display: block;
+    margin-top: 30px;
     font-size: 14px;
     padding-left: 10px;
-    padding-top: 10px;
-    text-align: left; 
+    font-weight: bold;
 }
   
 input[type="email"],
@@ -150,26 +276,13 @@ input[type="tel"]:focus {
 input::placeholder {
     color: #A2A2A2;
 }
-  
-.login-password-wrapper {
-    position: relative;
-}
-  
-.login-password-wrapper .login-icon {
-    position: absolute;
-    right: 15px;
-    top: 55%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    opacity: 1;
-}
-  
+/* ================================ */
+
+/* ======== lupa sandi ======== */
 .login-forgot a {
     display: block;
     text-align: right;
-    margin-top: 10px;
+    margin-top: 21px;
     padding-right: 10px;
     font-size: 14px;
     font-weight: bold;
@@ -185,7 +298,9 @@ input::placeholder {
     text-decoration: underline;
     color: #686868;
 }
-  
+/* ======================= */
+
+/* ========== Tombol ========== */
 button {
     font-size: 17px;
     margin-top: 50px;
@@ -207,7 +322,9 @@ button:hover {
 button:active {
     background-color: #686868;
 }
-  
+/* =========================== */
+
+/* ========= Daftar ========== */
 .login-register {
     font-size: 14px;
     text-align: left;
@@ -229,7 +346,8 @@ button:active {
     text-decoration: underline;
     color: #686868;
 }
-  
+/* =========================== */
+
 @media (max-width: 958px) {
     .login-flex-container {
         flex-direction: column;
@@ -265,6 +383,12 @@ button:active {
         width: 150px;
     }
 }
+
+@media (max-width: 522px) {
+    form label {
+        margin-top: 40px;
+    }
+}
   
 @media (max-width: 480px) {
     .login-logo-wrapper {
@@ -287,6 +411,10 @@ button:active {
         padding: 0px 15px 18px 15px;
     }
 
+    form label {
+        margin-top: 30px;
+    }
+
     button {
         margin-top: 60px;
     }
@@ -297,5 +425,11 @@ button:active {
     input[type="tel"] {
         font-size: 13px;
         padding: 13px;
+    }
+}
+
+@media (max-width: 432px) {
+    form label {
+        margin-top: 40px;
     }
 }

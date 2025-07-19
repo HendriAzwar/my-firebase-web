@@ -167,8 +167,7 @@ const Kontak = () => {
     }
 
     setLoading(false);
-};
-
+    };
 
     return (
         <div className="kontak-halaman">

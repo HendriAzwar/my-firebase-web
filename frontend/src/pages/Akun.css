@@ -4,6 +4,9 @@
 
 body, html {
     font-family: Arial, sans-serif;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .akun-navbar-container {
@@ -199,18 +202,14 @@ body, html {
     text-decoration: none;
     font-size: 14px;
     font-weight: bold;
-    color: white;
     display: block;
     letter-spacing: 0.5px;
 }
 
-.akun-sidebar a:hover,
-.akun-sidebar a:active {
-    background-color: white;
-    color: #111;
-}
-
 .akun-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     margin-left: 180px;
     padding: 15px 65px 30px 70px;
 }
@@ -219,7 +218,7 @@ body, html {
     display: flex;
     flex-direction: column;
     gap: 30px;
-    margin-bottom: 20px;
+    padding: 0;
 }
 
 .akun-akun-user {
@@ -242,10 +241,10 @@ body, html {
     text-align: left; 
 }
 
-input[type="email"],
-input[type="password"],
-input[type="text"],
-input[type="tel"] {
+.akun-form input[type="email"],
+.akun-form input[type="password"],
+.akun-form input[type="text"],
+.akun-form input[type="tel"] {
     width: 100%;
     padding: 12px;
     padding-right: 45px;
@@ -255,15 +254,15 @@ input[type="tel"] {
     transition: box-shadow 0.2s ease;
 }
 
-input[type="email"]:focus,
-input[type="password"]:focus,
-input[type="text"]:focus,
-input[type="tel"]:focus {
+.akun-form input[type="email"]:focus,
+.akun-form input[type="password"]:focus,
+.akun-form input[type="text"]:focus,
+.akun-form input[type="tel"]:focus {
     outline: none;
     box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
 }  
   
-input::placeholder {
+.akun-form input::placeholder {
     color: #A2A2A2;
 }
 
@@ -309,11 +308,11 @@ input::placeholder {
     font-weight: bold;
     font-size: 14px;
     cursor: pointer;
-    width: 500px; 
+    width: 100%; 
 }
 
 .akun-button-hapus:hover {
-    background-color: #686868;
+    background-color: #9e0000;
 }
 
 .akun-hapus-overlay {
@@ -504,15 +503,12 @@ input::placeholder {
 }
 
 .akun-dark-mode .akun-navbar-other-dropdown-menu {
-    box-shadow: 0 0px 7px rgba(255, 255, 255, 0.3);
-}
-
-.akun-dark-mode .akun-navbar-other-dropdown-menu {
-    background-color: white;
+    background-color: #424242;
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
 }
 
 .akun-dark-mode .akun-navbar-other-dropdown-menu a {
-    color: #000000;
+    color: #ffffff;
 }
 
 .akun-dark-mode .akun-navbar-other-dropdown-menu a:hover,
@@ -542,8 +538,9 @@ input::placeholder {
 }
 
 .akun-dark-mode .akun-dropdown-language {
-    background-color: #ffffff;
-    box-shadow: 0 0px 10px rgba(255, 255, 255, 0.3);
+    background-color: #424242;
+    color: #ffffff;
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
 }
 
 .akun-dark-mode .akun-dropdown-language div:hover,
@@ -573,8 +570,8 @@ input::placeholder {
 
 .akun-dark-mode .akun-sidebar a:hover,
 .akun-dark-mode .akun-sidebar a:active {
-    background-color: white;
-    color: #111;
+    background-color: #424242;
+    color: #ffffff;
 }
 
 .akun-dark-mode .akun-main-content {
@@ -586,14 +583,14 @@ input::placeholder {
 }
 
 .akun-dark-mode .akun-form button {
-    background-color: #686868;
+    background-color: #626262;
     color: #ffffff;
 }
 
 .akun-dark-mode .akun-form button:hover,
 .akun-dark-mode .akun-form button:active {
-    background-color: #ffffff;
-    color: #000000;
+    background-color: #4f4f4f;
+    color: #ffffff;
 }
 
 .akun-dark-mode .akun-footer-edit {
@@ -629,10 +626,6 @@ input::placeholder {
         margin-left: 0 !important;
     }
 
-    .akun-button-hapus {
-        width: 100%; 
-    }
-
     .akun-footer-edit {
         margin-left: 0 !important;
     }
@@ -665,6 +658,7 @@ input::placeholder {
     .akun-footer-edit {
         justify-content: center;
         gap: 5px;
+        padding-top: 30px;
         margin-left: 0px;
         padding-left: 0px;
         padding-bottom: 30px;
@@ -726,6 +720,24 @@ input::placeholder {
     .akun-footer-edit {
         margin-left: 0 !important;
         justify-content: center;
+    }
+}
+
+@media (max-width: 373px) {
+    .akun-navbar-left img {
+        margin-right: 8px;
+    }
+
+    .akun-garis {
+        display: none;
+    }
+
+    .akun-footer-icon {
+        height: 13px;
+    }
+
+    .akun-footer-edit p {
+        font-size: 11px;
     }
 }
 /* ------------------------------------------------------------------- */

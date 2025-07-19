@@ -96,14 +96,14 @@ const Akun = () => {
     }, []);
 
     // Show dan hide password form kiri dan kanan
-    const [showPasswordLeft, setShowPasswordLeft] = useState(false);
-    const [showPasswordRight, setShowPasswordRight] = useState(false);
-    const togglePasswordLeft = () => {
-        setShowPasswordLeft(!showPasswordLeft);
-    };
-    const togglePasswordRight = () => {
-        setShowPasswordRight(!showPasswordRight);
-    };
+    // const [showPasswordLeft, setShowPasswordLeft] = useState(false);
+    // const [showPasswordRight, setShowPasswordRight] = useState(false);
+    // const togglePasswordLeft = () => {
+    //     setShowPasswordLeft(!showPasswordLeft);
+    // };
+    // const togglePasswordRight = () => {
+    //     setShowPasswordRight(!showPasswordRight);
+    // };
 
     // Darkmode dan lightmode
     const [darkMode, setDarkMode] = useState(() => {
@@ -127,11 +127,11 @@ const Akun = () => {
                 if (docSnap.exists()) {
                     setUserData(docSnap.data());
                 } else {
-                    toast.error("User tidak ditemukan");
+                    toast.error("User tidak ditemukan"); // testing saja
                 }
             } catch (err) {
                 console.error('Gagal ambil data user:', err);
-                toast.error(t.gagalAmbilData);
+                toast.error(t.gagalAmbilData, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
             }
         };
         if (uid) fetchUserData();
@@ -145,11 +145,11 @@ const Akun = () => {
         setTimeout(() => navigate('/'), 2000);
     };
 
-    // untuk menampilkan hash
-    const formatHashDisplay = (hash) => {
-        if (!hash || hash.length <= 20) return hash;
-        return `${hash.substring(0, 10)}...${hash.substring(hash.length - 10)}`;
-    };
+    // // untuk menampilkan hash
+    // const formatHashDisplay = (hash) => {
+    //     if (!hash || hash.length <= 20) return hash;
+    //     return `${hash.substring(0, 10)}...${hash.substring(hash.length - 10)}`;
+    // };
 
     // Ubah data user di halaman akun
     const [editData, setEditData] = useState({
@@ -182,7 +182,7 @@ const Akun = () => {
             setUserData(updatedSnap.data());
         } catch (error) {
             console.error('Update error:', error);
-            toast.error(t.gagalUbahData, { autoClose: 2000 });
+            toast.error(t.gagalUbahData, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
         }
     };
 
@@ -198,17 +198,17 @@ const Akun = () => {
     
     const handleConfirmDelete = async () => {
         if (confirmEmail !== userData.email) {
-            toast.error(t.gagalHapusAkun, { autoClose: 2000 });
+            toast.error(t.gagalHapusAkun, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
             return;
         }
         try {
             await deleteDoc(doc(db, 'users', uid));
-            toast.success(t.berhasilHapusAkun, { autoClose: 1500 });
+            toast.success(t.berhasilHapusAkun, { position: 'top-right', autoClose: 1000, closeButton: false, pauseOnHover: false });
             localStorage.removeItem('userId');
             setTimeout(() => navigate('/'), 2000);
         } catch (error) {
             console.error('Delete error:', error);
-            toast.error(t.errorHapusAkun, { autoClose: 2000 });
+            toast.error(t.errorHapusAkun, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
         }
     };
 
@@ -315,7 +315,7 @@ const Akun = () => {
                                 onChange={handleChange}
                                 placeholder={t.placeholderEmail}
                             />
-                            <label htmlFor="password">{t.kataSandi}</label>
+                            {/* <label htmlFor="password">{t.kataSandi}</label>
                             <div className="akun-password-wrapper">
                                 <input
                                     type={showPasswordLeft ? 'text' : 'password'}
@@ -330,7 +330,7 @@ const Akun = () => {
                                     className="akun-icon"
                                     onClick={togglePasswordLeft}
                                 />
-                            </div>
+                            </div> */}
                             <button onClick={handleUpdate}>{t.ubahDataUser}</button>
                         </div>
                         {/* Form kanan */}
@@ -356,7 +356,7 @@ const Akun = () => {
                                 id="email_readonly"
                                 readOnly
                             />
-                            <label htmlFor="password">{t.kataSandi}</label>
+                            {/* <label htmlFor="password">{t.kataSandi}</label>
                             <div className="akun-password-wrapper">
                                 <input
                                     type={showPasswordRight ? 'text' : 'password'}
@@ -371,7 +371,7 @@ const Akun = () => {
                                     className="akun-icon"
                                     onClick={togglePasswordRight}
                                 />
-                            </div>
+                            </div> */}
                             <button onClick={handleLogout}>{t.keluarDataUser}</button>
                         </div>
                     </div>

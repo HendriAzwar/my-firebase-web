@@ -204,6 +204,9 @@ body, html, #root {
 }
 
 .beranda-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     margin-left: 180px;
     padding: 15px 65px 30px 70px;
 }
@@ -378,7 +381,8 @@ body, html, #root {
 }
 
 .beranda-light-mode .beranda-dropdown-language {
-    background-color: white;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .beranda-light-mode .beranda-dropdown-language div:hover,
