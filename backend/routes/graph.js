@@ -6,7 +6,7 @@ const router = express.Router();
 
 // ====== Konfigurasi MCB - Data mapping untuk setiap MCB ======
 const MCB_CONFIG = {
-  mcb1: { collection: "monitoring_percobaan", rooms: [1, 2, 3], roomNames: ["Kamar 1", "Kamar 2", "Kamar 3"] },
+  mcb1: { collection: "monitoring_listrik_mcb1", rooms: [1, 2, 3], roomNames: ["Kamar 1", "Kamar 2", "Kamar 3"] },
   mcb2: { collection: "monitoring_listrik_mcb2", rooms: [4, 5, 6], roomNames: ["Kamar 4", "Kamar 5", "Kamar 6"] },
   mcb3: { collection: "monitoring_listrik_mcb3", rooms: [7, 8, 9], roomNames: ["Kamar 7", "Kamar 8", "Kamar 9"] },
   mcb4: { collection: "monitoring_listrik_mcb4", rooms: [10, 11, 12], roomNames: ["Kamar 10", "Kamar 11", "Kamar 12"] },
@@ -115,14 +115,10 @@ router.get("/permenit/:mcbId", async (req, res) => {
   const { mcbId } = req.params;
   const { startDateTime, endDateTime } = req.query;
 
-  if (!MCB_CONFIG[mcbId]) {
-    return res.status(400).json({ error: `MCB ${mcbId} tidak ditemukan` });
-  }
-
-  const config = MCB_CONFIG[mcbId];
+  const realtimeCollection = process.env.REALTIME_COLLECTION || "monitoring_percobaan";// 🔧 Gunakan tabel percobaan
 
   try {
-    const snapshot = await db.collection(config.collection)
+    const snapshot = await db.collection(realtimeCollection)
       .where("timestamp", ">=", new Date(startDateTime))
       .where("timestamp", "<=", new Date(endDateTime))
       .orderBy("timestamp")
@@ -134,17 +130,17 @@ router.get("/permenit/:mcbId", async (req, res) => {
         d.timestamp = d.timestamp.toDate().toISOString();
       }
       return d;
-    }).filter(d => config.rooms.includes(d.kamar));
+    });
 
     res.json({
       data: rawData,
-      mcbConfig: { id: mcbId, roomNames: config.roomNames },
     });
   } catch (err) {
     console.error("Error fetch permenit:", err);
     res.status(500).json({ error: "Gagal mengambil data permenit" });
   }
 });
+
 
 
 function getWeekNumber(d) {

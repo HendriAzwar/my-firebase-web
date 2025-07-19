@@ -489,7 +489,22 @@ const fetchDataPerMenit = async () => {
       const orderedData = [...json.data].sort(
         (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
       );
-      setData(orderedData);
+      const transformedData = [];
+
+orderedData.forEach(entry => {
+  const existing = transformedData.find(e => e.timestamp === entry.timestamp);
+  const roomKey = `room${entry.kamar}`;
+  if (existing) {
+    existing[roomKey] = entry.kWh;
+  } else {
+    transformedData.push({
+      timestamp: entry.timestamp,
+      [roomKey]: entry.kWh,
+    });
+  }
+});
+
+      setData(transformedData);
       setSummaryData(null);
     } else {
       setData([]);
@@ -526,7 +541,7 @@ const fetchDataPerMenit = async () => {
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ color: entry.color }}>
-                            {`${entry.name}: ${parseFloat(entry.value).toFixed(2)} kWh`}
+                            {`${entry.name}: ${parseFloat(entry.value).toFixed(7)} kWh`}
                         </p>
                     ))}
                 </div>
@@ -537,16 +552,15 @@ const fetchDataPerMenit = async () => {
     // ========================================= 
 
     // ===== Format X-axis label =====
-    const formatXAxisLabel = (value) => {
-        const date = new Date(value);
-        return date.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
-            day: "2-digit",
-            month: "2-digit",
-    //             hour: "2-digit",
-    // minute: "2-digit",
-    // second: "2-digit",
-        });
-    };
+const formatXAxisLabel = (value) => {
+  const date = new Date(value);
+  return date.toLocaleTimeString(language === "en" ? "en-US" : "id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
+
     // ========================================= 
 
     // ===== Komponen tampilan total/penjumlahan =====
