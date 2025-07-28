@@ -309,7 +309,6 @@ const Grafik = () => {
                 const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const json = await res.json();
-
                 if (json.data) {
                     const orderedData = [...json.data].sort(
                         (a, b) => new Date(a.tanggal) - new Date(b.tanggal)

@@ -38,7 +38,7 @@ router.get("/harian/:mcbId", async (req, res) => {
     const rawData = snapshot.docs.map((doc) => {
         const d = doc.data();
         if (d.timestamp && typeof d.timestamp.toDate === "function") {
-            
+            d.timestamp = d.timestamp.toDate();
         }
         return d;
     }).filter((d) => {
