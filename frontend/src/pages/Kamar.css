@@ -159,6 +159,131 @@ body, html, #root {
     margin: 0px 12px;
 }
 
+/* ========= Notifikasi ========== */
+.kamar-navbar-notification {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.kamar-notification-icon-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.5px;
+}
+
+.kamar-notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -1px;
+    background-color: #ff4757;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    height: 18px;
+    min-width: 18.5px;
+    border-radius: 999px;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.kamar-notification-icon {
+    width: 23px;
+    height: 23px;
+    margin: 0px 12px;
+    cursor: pointer;
+}
+
+.kamar-navbar-notification-dropdown {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    padding: 20px;
+    top: 41.5px;
+    right: -125px;
+    border-radius: 0px 0px 6px 6px;
+    z-index: 101;
+    box-shadow: 0 7px 10px -3px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    max-height: 300px;
+}
+
+.kamar-notification-kolom {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+}
+
+.kamar-notification-kolom > *:not(:last-child) {
+    border-bottom: 1px solid #000000;
+    padding-bottom: 15px;
+}
+
+.kamar-notification-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.kamar-notification-judul-nolimit {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+    font-size: 14px;
+    color: #000000;
+    margin-bottom: 5px;
+    text-align: center;
+    justify-content: center;
+}
+
+.kamar-notification-judul {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+    font-size: 14px;
+    color: #000000;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.kamar-notification-isi {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.kamar-notification-isi span{
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    color: #626262;
+}
+
+.kamar-hapus-notifikasi-btn {
+    background-color: #000000;
+    color: white;
+    border: none;
+    padding: 5px 8px 8px 8px;
+    font-size: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.kamar-hapus-notifikasi-btn:hover {
+    background-color: #686868;
+}
+/* ============================ */
+
 .kamar-language-switch {
     position: relative;
     display: flex;
@@ -608,6 +733,7 @@ body, html, #root {
     font-weight: bold;
     padding-left: 10px;
     text-align: start;
+    overflow: none;
 }
 
 .kamar-daftar-labelsisa {
@@ -677,7 +803,11 @@ body, html, #root {
 
 /* ----Komponen dalam Light Mode------------------------------------- */
 .kamar-light-mode .kamar-navbar {
-    background-color: #fff;
+    background-color: #ffffff;
+}
+
+.kamar-light-mode .kamar-navbar-notification-dropdown {
+    background-color: #ffffff;
 }
 
 .kamar-light-mode .kamar-navbar-other-dropdown-menu {
@@ -761,6 +891,22 @@ body, html, #root {
     background-color: #2d2d2d;
 }
 
+.kamar-dark-mode .kamar-navbar-notification-dropdown {
+    background-color: #424242;
+}
+
+.kamar-dark-mode .kamar-notification-isi span{
+    color: #dddddd;
+}
+
+.kamar-dark-mode .kamar-notification-judul-nolimit {
+    color: #ffffff;
+}
+
+.kamar-dark-mode .kamar-notification-judul {
+    color: #ffffff;
+}
+
 .kamar-dark-mode .kamar-error p {
     color: #ffffff;
 }
@@ -768,6 +914,10 @@ body, html, #root {
 .kamar-dark-mode .kamar-error button {  
     color: #000000;
     background-color: #ffffff;
+}
+
+.kamar-dark-mode .kamar-hapus-notifikasi-btn:hover {
+    background-color: #686868;
 }
 
 .kamar-dark-mode .kamar-navbar {
@@ -1088,6 +1238,7 @@ body, html, #root {
 
     .kamar-tombol-kamar label {
         text-align: center;
+        padding-left: 0px;
     }
 
     .kamar-footer-edit {

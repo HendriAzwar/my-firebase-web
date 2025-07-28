@@ -13,10 +13,14 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import useNotifications from '../hooks/Notification.js';
 
 const Kontak = () => {
 // ============ LANGUAGE ============
+    const dropdownRef = useRef(null);
+    const globeRef = useRef(null);
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
+    const [showDropdown, setShowDropdown] = useState(false);
     const t = translations[language];
     const handleLanguageChange = (lang) => {
         setLanguage(lang);
@@ -24,6 +28,13 @@ const Kontak = () => {
         setShowDropdown(false);
     };
     // ==============================
+
+    // ========= NOTIFICATION FUNCTIONALITY ========
+    const notificationRef = useRef(null);
+    const notificationIconRef = useRef(null);
+    const [showNotification, setShowNotification] = useState(false);
+    const { savedNotifications, deleteNotification } = useNotifications(); 
+    // =============================================
 
     // ============ DARK MODE MANAGEMENT ============
     const [darkMode, setDarkMode] = useState(() => {
@@ -37,15 +48,11 @@ const Kontak = () => {
     // ==============================
 
     // ============ DROPDOWN MANAGEMENT ============
-    const dropdownRef = useRef(null);
-    const globeRef = useRef(null);
     const otherMenuRef = useRef(null);
     const otherIconRef = useRef(null);
-    const [showDropdown, setShowDropdown] = useState(false);
     const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
     useEffect(() => {
         const handleClickOutsideDropdown = (event) => {
-            // Language dropdown
             if (
                 dropdownRef.current &&
                 !dropdownRef.current.contains(event.target) &&
@@ -54,8 +61,6 @@ const Kontak = () => {
             ) {
                 setShowDropdown(false);
             }
-
-            // Other menu dropdown
             if (
                 otherMenuRef.current &&
                 !otherMenuRef.current.contains(event.target) &&
@@ -63,6 +68,14 @@ const Kontak = () => {
                 !otherIconRef.current.contains(event.target)
             ) {
                 setShowNavRightDropDown(false);
+            }
+            if (
+                notificationRef.current &&
+                !notificationRef.current.contains(event.target) &&
+                notificationIconRef.current &&
+                !notificationIconRef.current.contains(event.target)
+            ) {
+                setShowNotification(false);
             }
         };
 
@@ -112,61 +125,61 @@ const Kontak = () => {
 
     const [email, setEmail] = useState('');
     const [pesan, setPesan] = useState('');
-    const [status, setStatus] = useState('');
+    const [status,] = useState('');
     const [loading, setLoading] = useState(false);
 
     const API_BASE_URL = import.meta.env.VITE_BACKEND_URL_KAMAR;
 
     const handleKirimPesan = async () => {
-    setLoading(true);
+        setLoading(true);
 
-    if (!isValidEmail(email)) {
-        toast.error(t.emailTidakSesuai, {
-            position: 'top-right',
-            autoClose: 2000,
-            closeButton: false,
-            pauseOnHover: false,
-        });
-        setLoading(false);
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/kontak`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, pesan }),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            toast.success(t.pesanBerhasilTerkirim, {
+        if (!isValidEmail(email)) {
+            toast.error(t.emailTidakSesuai, {
                 position: 'top-right',
-                autoClose: 1500,
+                autoClose: 2000,
                 closeButton: false,
                 pauseOnHover: false,
             });
-            setEmail('');
-            setPesan('');
-        } else {
-            toast.error(t.pesanGagalTerkirim, {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/kontak`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, pesan }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                toast.success(t.pesanBerhasilTerkirim, {
+                    position: 'top-right',
+                    autoClose: 1500,
+                    closeButton: false,
+                    pauseOnHover: false,
+                });
+                setEmail('');
+                setPesan('');
+            } else {
+                toast.error(t.pesanGagalTerkirim, {
+                    position: 'top-right',
+                    autoClose: 2000,
+                    closeButton: false,
+                    pauseOnHover: false,
+                });
+            }
+        } catch (error) {
+            toast.error(t.errorKirimPesan, {
                 position: 'top-right',
                 autoClose: 2000,
                 closeButton: false,
                 pauseOnHover: false,
             });
         }
-    } catch (error) {
-        toast.error(t.errorKirimPesan, {
-            position: 'top-right',
-            autoClose: 2000,
-            closeButton: false,
-            pauseOnHover: false,
-        });
-    }
 
-    setLoading(false);
+        setLoading(false);
     };
 
     return (
@@ -181,7 +194,6 @@ const Kontak = () => {
                     <a>Senergy</a>
                 </div>
                 <div className="kontak-navbar-right">
-                    {/* Ukuran HandPhone */}
                     <div className="kontak-navbar-other-dropdown">
                         <img
                             ref={otherIconRef}
@@ -192,22 +204,60 @@ const Kontak = () => {
                         />
                         {showNavRightDropDown && (
                             <div className="kontak-navbar-other-dropdown-menu" ref={otherMenuRef}>
-                                {/* untuk Link gunakan a untuk edit CSS */}
                                 <Link to="/kontak">{t.berandaKontak}</Link>
                                 <Link to="/beranda">{t.berandaBeranda}</Link>
                                 <Link to="/akun">{t.berandaAkun}</Link>
                             </div>
                         )}
                     </div>
-                    {/* Ukuran Desktop */}
                     <div className="kontak-navbar-right-desktop">
-                        {/* untuk Link gunakan a untuk edit CSS */}
                         <Link to="/kontak">{t.berandaKontak}</Link>
                         <Link to="/beranda">{t.berandaBeranda}</Link>
                         <Link to="/akun">{t.berandaAkun}</Link>
                     </div>
                     <div className="kontak-garis"></div>
-                    <img src={notificationIcon} alt="Notifikasi" className="kontak-notifikasi-icon" />
+                    <div className="kontak-navbar-notification"> 
+                        <div className="kontak-notification-icon-container">
+                            <img 
+                                ref={notificationIconRef}
+                                src={notificationIcon} 
+                                alt="Notifikasi" 
+                                className="kontak-notification-icon" 
+                                onClick={() => setShowNotification(!showNotification)}
+                            />
+                            {savedNotifications.length > 0 && (
+                                <div className={`kontak-notification-badge ${savedNotifications.length > 99 ? 'large-count' : ''}`}>
+                                    {savedNotifications.length > 99 ? '99+' : savedNotifications.length}
+                                </div>
+                            )}
+                        </div>
+                        {showNotification && (
+                            <div className="kontak-navbar-notification-dropdown" ref={notificationRef}>
+                                <div className="kontak-notification-kolom">
+                                    {savedNotifications.length === 0 ? (
+                                        <div className="kontak-notification-item">
+                                            <div className="kontak-notification-judul-nolimit">{t.tidakAdaNotifikasiOverlimit}</div>
+                                        </div>
+                                    ) : (
+                                        savedNotifications.map((notif, index) => (
+                                            <div key={index} className="kontak-notification-item">
+                                                <div className="kontak-notification-judul">{t.kamar} {notif.id}</div>
+                                                <div className="kontak-notification-isi">
+                                                    <span>{t.namaPenggunaKos}: {notif.nama || '-'}</span>
+                                                    <span>{t.editPenggunaan}: {notif.penggunaan?.toFixed(2)} kWh</span>
+                                                    <span>{t.tanggalNotifikasi}: {notif.tanggal}</span>
+                                                    <span>Status: {t.infoMelebihi}</span>
+                                                </div>
+                                                <button className="kontak-hapus-notifikasi-btn" onClick={() => deleteNotification(notif.id)}>
+                                                    {t.hapusNotifikasi}
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="kontak-language-switch">
                         <img
                             ref={globeRef}
@@ -237,9 +287,7 @@ const Kontak = () => {
                 </div>
             </div>
             <div className="kontak-sidebar" id="kontak-sidebar">
-                {/* untuk Link gunakan a untuk edit CSS */}
                 <Link to="/kamar" onClick={closeSidebar}>{t.berandaKamar}</Link>
-                {/* <Link to="/kontrol" onClick={closeSidebar}>{t.berandaKontrol}</Link> */}
                 <Link to="/grafik" onClick={closeSidebar}>{t.berandaGrafik}</Link>
             </div>
             <div className="kontak-main-content">
@@ -254,25 +302,29 @@ const Kontak = () => {
                             <div className="kontak-form">
                                 <label className="kontak-form-label">{t.email}</label>
                                 <input
-                                type="email"
-                                className="kontak-form-input"
-                                placeholder={t.placeholderEmail}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                    type="email"
+                                    className="kontak-form-input"
+                                    placeholder={t.placeholderEmail}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                 />
                                 <label className="kontak-form-label">{t.labelPesanAnda}</label>
                                 <textarea
-                                className="kontak-form-textarea"
-                                placeholder={t.placeholderPesan}
-                                rows="6"
-                                value={pesan}
-                                onChange={(e) => setPesan(e.target.value)}
+                                    className="kontak-form-textarea"
+                                    placeholder={t.placeholderPesan}
+                                    rows="6"
+                                    value={pesan}
+                                    onChange={(e) => setPesan(e.target.value)}
                                 />
                                 <button className="kontak-form-button" onClick={handleKirimPesan} disabled={loading}>
-                                {loading ? 'Mengirim...' : t.pesanKirim}
+                                    {loading ? t.mengirim : t.pesanKirim}
                                 </button>
 
-                                {status && <p style={{ marginTop: '10px' }}>{status}</p>}
+                                {status && 
+                                    <p style={{ marginTop: '10px' }}>
+                                        {status}
+                                    </p>
+                                }
                             </div>
                         </div>
                     </div>

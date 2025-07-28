@@ -10,15 +10,7 @@ rtdb.ref('monitoring_listrik_mcb1').on('child_added', async (snapshot) => {
   if (!data || !data.timestamp) return;
 
   try {
-    const existing = await firestore.collection("monitoring_percobaan")
-      .where("timestamp", "==", admin.firestore.Timestamp.fromMillis(data.timestamp))
-      .limit(1)
-      .get();
-
-    if (!existing.empty) {
-      console.log(`Data already exists in Firestore, skipping: ${pushId}`);
-      return;
-    }
+    // HAPUS PENGECEKAN EXISTING
 
     await firestore.collection("monitoring_percobaan").add({
       mcb: data.mcb,
@@ -26,6 +18,7 @@ rtdb.ref('monitoring_listrik_mcb1').on('child_added', async (snapshot) => {
       tegangan: data.tegangan,
       arus: data.arus,
       daya: data.daya,
+      Wh: data.Wh,
       kWh: data.kWh,
       powerFactor: data.powerFactor,
       timestamp: admin.firestore.Timestamp.fromMillis(data.timestamp)

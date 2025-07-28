@@ -10,6 +10,7 @@ import hamburgerIcon from "../assets/hamburger.svg";
 import tripledotIcon from "../assets/other.svg";
 import translations from "../components/Bahasa.js";
 import { Link } from "react-router-dom";
+import useNotifications from '../hooks/Notification.js';
 import {
     LineChart,
     Line,
@@ -91,7 +92,6 @@ const Grafik = () => {
         const strokeDasharray = circumference;
         const strokeDashoffset = circumference * 2; //lingkaran muter
         const spinnerColor = darkMode ? '#ffffff' : '#000000';
-
         return (
             <div className="grafik-loading">
                 <svg
@@ -125,6 +125,13 @@ const Grafik = () => {
     };
     // ==============================================
 
+    // ========= NOTIFICATION FUNCTIONALITY ========
+    const notificationRef = useRef(null);
+    const notificationIconRef = useRef(null);
+    const [showNotification, setShowNotification] = useState(false);
+    const { savedNotifications, deleteNotification } = useNotifications(); 
+    // =============================================
+
     // ===== Tombol Garis 3 Sidebar Left =====
     const toggleSidebar = () => {
         const sidebar = document.getElementById("grafik-sidebar");
@@ -152,7 +159,6 @@ const Grafik = () => {
               sidebar.classList.remove("grafik-open-sidebar");
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -164,39 +170,6 @@ const Grafik = () => {
     const otherMenuThreeDots = useRef(null);
     const otherIconThreeDots = useRef(null);
     const [showOtherMenuThreeDots, setShowOtherMenuThreeDots] = useState(false);
-    // =========================================
-
-    // ===== Bahasa =====
-    const globeLanguage = useRef(null);
-    const dropdownLanguage = useRef(null);
-    const [showDropdownLanguage, setShowDropdownLanguage] = useState(false);
-    const [language, setLanguage] = useState(
-        localStorage.getItem("language") || "id"
-    );
-    const t = translations[language];
-
-    const handleLanguageChange = (lang) => {
-        setLanguage(lang);
-        localStorage.setItem("language", lang);
-        setShowDropdownLanguage(false);
-    };
-    // =========================================
-
-    // ===== Darkmode dan LightMode =====
-    const [darkMode, setDarkMode] = useState(() => {
-        const savedMode = localStorage.getItem("darkMode");
-        return savedMode === "true";
-    });
-
-    useEffect(() => {
-        document.body.className = darkMode
-            ? "grafik-dark-mode"
-            : "grafik-light-mode";
-        localStorage.setItem("darkMode", darkMode);
-    }, [darkMode]);
-    // =========================================
-
-    // ===== Fitur ubah bahasa dan menu lainnya: kontak, beranda, dan akun (Three Dots) =====
     useEffect(() => {
         const handleClickOutsideDropdown = (event) => {
             if (
@@ -215,8 +188,15 @@ const Grafik = () => {
             ) {
                 setShowOtherMenuThreeDots(false);
             }
+            if (
+                notificationRef.current &&
+                !notificationRef.current.contains(event.target) &&
+                notificationIconRef.current &&
+                !notificationIconRef.current.contains(event.target)
+            ) {
+                setShowNotification(false);
+            }
         };
-
         document.addEventListener("mousedown", handleClickOutsideDropdown);
         return () => {
             document.removeEventListener("mousedown", handleClickOutsideDropdown);
@@ -224,7 +204,36 @@ const Grafik = () => {
     }, []);
     // =========================================
 
+    // ===== Bahasa =====
+    const globeLanguage = useRef(null);
+    const dropdownLanguage = useRef(null);
+    const [showDropdownLanguage, setShowDropdownLanguage] = useState(false);
+    const [language, setLanguage] = useState(
+        localStorage.getItem("language") || "id"
+    );
+    const t = translations[language];
+    const handleLanguageChange = (lang) => {
+        setLanguage(lang);
+        localStorage.setItem("language", lang);
+        setShowDropdownLanguage(false);
+    };
+    // =========================================
+
+    // ===== Darkmode dan LightMode =====
+    const [darkMode, setDarkMode] = useState(() => {
+        const savedMode = localStorage.getItem("darkMode");
+        return savedMode === "true";
+    });
+
+    useEffect(() => {
+        document.body.className = darkMode ? "grafik-dark-mode" : "grafik-light-mode";
+        localStorage.setItem("darkMode", darkMode);
+    }, [darkMode]);
+    // =========================================
+
+    // ========= Mengambil URL backend =========
     const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+    // =========================================
 
     // ===== Fetch untuk cek MCB yang tersedia =====
     useEffect(() => {
@@ -278,49 +287,51 @@ const Grafik = () => {
     }, [selectedMCB, availableMCBs]);
     // ========================================= 
 
+    // ======== Tombol filter Grafik ========
+    const [filterMode, setFilterMode] = useState('harian');
     const [startDateTime, setStartDateTime] = useState("");
     const [endDateTime, setEndDateTime] = useState("");
     const [isRealtimeMode, setIsRealtimeMode] = useState(false);
+    // ======================================
+
     // ===== Fetch utama untuk kalender =====
-
+    // Update useEffect yang sudah ada untuk mengecek filterMode
     useEffect(() => {
-        if (!selectedMCB || !startDate || !endDate || isRealtimeMode) return;
-
+        if (!selectedMCB || !startDate || !endDate || filterMode !== "harian") return;
         const fetchData = async () => {
             setLoading(true);
             try {
-              const params = new URLSearchParams({
-                startDate: formatDateForAPI(startDate),
-                endDate: formatDateForAPI(endDate),
-              });
+                const params = new URLSearchParams({
+                    startDate: formatDateForAPI(startDate),
+                    endDate: formatDateForAPI(endDate),
+                });
 
-              const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
-              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-              const json = await res.json();
+                const res = await fetch(`${API_BASE_URL}/harian/${selectedMCB}?${params.toString()}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const json = await res.json();
 
-              if (json.data) {
-                const orderedData = [...json.data].sort(
-                  (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
-                );
-                setData(orderedData);
-                setSummaryData(json.summary);
-              } else {
+                if (json.data) {
+                    const orderedData = [...json.data].sort(
+                        (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
+                    );
+                    setData(orderedData);
+                    setSummaryData(json.summary);
+                } else {
+                    setData([]);
+                    setSummaryData(null);
+                }
+            } catch (err) {
+                console.error("Gagal mengambil data grafik:", err);
                 setData([]);
                 setSummaryData(null);
-              }
-            } catch (err) {
-              console.error("Gagal mengambil data grafik:", err);
-              setData([]);
-              setSummaryData(null);
             } finally {
-              setLoading(false);
+                setLoading(false);
             }
         };
 
         fetchData();
-    }, [selectedMCB, startDate, endDate, isRealtimeMode]);
+    }, [selectedMCB, startDate, endDate, filterMode]);
     // =========================================
-
 
     // ===== Tombol pengatur visibility garis tertentu pada grafik =====
     const handleLegendClick = (dataKey) => {
@@ -368,160 +379,248 @@ const Grafik = () => {
 
     // ===== Komponen untuk memfilter tanggal =====
     const DateFilters = () => {
+        const handleManualFetchRealtime = () => {
+            if (!startDateTime || !endDateTime || !selectedMCB) {
+                alert("Lengkapi semua input terlebih dahulu");
+                return;
+            }
+            fetchDataPerMenit();
+        };
+
         return (
             <div className="grafik-date-filters">
+                <div className="grafik-pilih-mode">
+                    <label>{t.modeGrafik}:</label>
+                    <select
+                        value={filterMode}
+                        onChange={(e) => {
+                            const newMode = e.target.value;
+                            setFilterMode(newMode);
+                            setData([]);
+                            setSummaryData(null);
 
-<label>Start DateTime </label>
-  <input
-    type="datetime-local"
-    value={startDateTime}
-    onChange={(e) => setStartDateTime(e.target.value)}
-  />
-
-<label>End DateTime </label>
-  <input
-    type="datetime-local"
-    value={endDateTime}
-    onChange={(e) => setEndDateTime(e.target.value)}
-  />
-
-  <button onClick={fetchDataPerMenit}>
-    Tampilkan Grafik Per Menit
-  </button>
-                <div className="grafik-filter-tanggal">
-                    <div className="grafik-pilih-tanggal-dari">
-                        <div className="grafik-kolom-pilih-tanggal-dari">
-                            <label>
-                                {t.filterHarianDariTanggal}
-                            </label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                            />
-                        </div>
-                        <div className="grafik-kolom-pilih-tanggal-sampai">
-                            <label>
-                                {t.filterHarianSampaiTanggal}
-                            </label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                min={startDate}
-                            />
-                        </div>
-                    </div>
-                    <div className="grafik-filter-pilih-tombol">
-                        <button
-                            onClick={() => {
-                                setStartDate(getTodayDate());
-                                setEndDate(getTodayDate());
-                            }}
-                        >
-                            {t.tombolHariIni}
-                        </button>
-                        <button
-                            onClick={() => {
+                            if (newMode === "realtime") {
+                                setIsRealtimeMode(true);
+                                    if (!startDateTime) {
+                                    const now = new Date();
+                                    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+                                    setStartDateTime(twoHoursAgo.toISOString().slice(0,16));
+                                    setEndDateTime(now.toISOString().slice(0,16));
+                                }
+                            } else {
+                                setIsRealtimeMode(false);
                                 setStartDate(getWeekAgoDate());
                                 setEndDate(getTodayDate());
-                            }}
-                        >
-                            {t.tombol7Hari}
-                        </button>
-                        <button
-                            onClick={() => {
+                            }
+                        }}
+                    >
+                        <option value="harian">{t.harian}</option>
+                        <option value="realtime">{t.terbaru}</option>
+                    </select>
+                </div>
+
+                {/* === FILTER REALTIME === */}
+                {filterMode === "realtime" && (
+                    <>
+                    <div className="grafik-filter-tanggal">
+                        <div className="grafik-pilih-tanggal-dari">
+                            <div className="grafik-kolom-pilih-tanggal-dari">
+                                <label>{t.filterDariTanggal}</label>
+                                <input
+                                    type="datetime-local"
+                                    value={startDateTime}
+                                    onChange={(e) => setStartDateTime(e.target.value)}
+                                />
+                            </div>
+                            <div className="grafik-kolom-pilih-tanggal-sampai">
+                                <label>{t.filterSampaiTanggal}</label>
+                                <input
+                                    type="datetime-local"
+                                    value={endDateTime}
+                                    onChange={(e) => setEndDateTime(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="grafik-filter-pilih-tombol">
+                            <button onClick={() => {
+                                const now = new Date();
+                                const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+                                setStartDateTime(oneHourAgo.toISOString().slice(0,16));
+                                setEndDateTime(now.toISOString().slice(0,16));
+                            }}>
+                            {t.tombol1Jam}
+                            </button>
+                            <button onClick={() => {
+                                const now = new Date();
+                                const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                                setStartDateTime(sixHoursAgo.toISOString().slice(0,16));
+                                setEndDateTime(now.toISOString().slice(0,16));
+                            }}>
+                            {t.tombol6Jam}
+                            </button>
+                            <button onClick={() => {
+                                const now = new Date();
+                                const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                                setStartDateTime(twelveHoursAgo.toISOString().slice(0,16));
+                                setEndDateTime(now.toISOString().slice(0,16));
+                            }}>
+                            {t.tombol12Jam}
+                            </button>
+                            {/* TOMBOL MANUAL */}
+                            <button
+                                className="grafik-tombol-reset"
+                                onClick={handleManualFetchRealtime}
+                            >
+                            {t.tombolGrafikTerkini}
+                            </button>
+                        </div>
+                    </div>
+                    </>
+                )}
+
+                {/* === FILTER HARIAN === */}
+                {filterMode === "harian" && (
+                    <>
+                    <div className="grafik-filter-tanggal">
+                        <div className="grafik-pilih-tanggal-dari">
+                            <div className="grafik-kolom-pilih-tanggal-dari">
+                                <label>{t.filterDariTanggal}</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                            </div>
+                            <div className="grafik-kolom-pilih-tanggal-sampai">
+                                <label>{t.filterSampaiTanggal}</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    min={startDate}
+                                />
+                            </div>
+                        </div>
+                        <div className="grafik-filter-pilih-tombol">
+                            <button onClick={() => {
+                                setStartDate(getTodayDate());
+                                setEndDate(getTodayDate());
+                            }}>
+                                {t.tombolHariIni}
+                            </button>
+                            <button onClick={() => {
+                                setStartDate(getWeekAgoDate());
+                                setEndDate(getTodayDate());
+                            }}>
+                                {t.tombol7Hari}
+                            </button>
+                            <button onClick={() => {
                                 const thirtyDaysAgo = new Date();
                                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                                 setStartDate(thirtyDaysAgo.toISOString().split("T")[0]);
                                 setEndDate(getTodayDate());
-                            }}
-                        >
-                            {t.tombol30Hari}
-                        </button>
-                        <button
-                            className="grafik-tombol-reset"
-                            onClick={() => {
+                            }}>
+                                {t.tombol30Hari}
+                            </button>
+                            <button
+                                className="grafik-tombol-reset"
+                                onClick={() => {
                                 setStartDate(getWeekAgoDate());
                                 setEndDate(getTodayDate());
-                            }}
-                        >
-                            Reset
-                        </button>
-<button
-  onClick={() => {
-    setIsRealtimeMode(false); // Kembali ke mode harian
-    setStartDate(getWeekAgoDate());
-    setEndDate(getTodayDate());
-  }}
->
-  Tampilkan Grafik Harian
-</button>
+                                }}
+                            >
+                                Reset
+                            </button>
+                        </div>
                     </div>
-                </div>
+                    </>
+                )}
             </div>
         );
     };
     // ====================================================== 
+    
+    // ===== Helper function convert timestamp local to ISOString  =====
+    const localToUTCISOString = (localString) => {
+    const localDate = new Date(localString);       
+    
+    const utcTs     = localDate.getTime() - localDate.getTimezoneOffset()*60000;
+    return new Date(utcTs).toISOString();         
+    };
+    // ====================================================== 
 
-    // ----------------------------------------------------------
-const fetchDataPerMenit = async () => {
-  if (!selectedMCB || !startDateTime || !endDateTime) {
-    alert("Pilih MCB dan rentang waktu terlebih dahulu");
-    return;
-  }
+    // ===== Komponen untuk mendapatkan data real-time =====
+    const fetchDataPerMenit = async () => {
+        if (!selectedMCB || !startDateTime || !endDateTime) {
+            alert("Pilih MCB dan rentang waktu terlebih dahulu");
+            return;
+        }
+        if (new Date(startDateTime) >= new Date(endDateTime)) {
+            alert("Waktu mulai harus lebih awal dari waktu akhir.");
+            return;
+        }
+        setIsRealtimeMode(true);
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                startDateTime: localToUTCISOString(startDateTime),
+                endDateTime:   localToUTCISOString(endDateTime),
+            });
+            const res = await fetch(
+                `${API_BASE_URL}/permenit/${selectedMCB}?${params.toString()}`
+            );
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const json = await res.json();
 
-  setIsRealtimeMode(true); // Aktifkan mode realtime
+            if (!json.data || json.data.length === 0) {
+                console.warn("⚠️ Data realtime kosong");
+                setData([]);
+                setSummaryData(null);
+                return;
+            }
 
-  setLoading(true);
-  try {
-    const params = new URLSearchParams({
-      startDateTime,
-      endDateTime,
-    });
+            // 1) Map semua entry.timestamp ke number (ms UTC)
+            const parsed = json.data.map(e => ({
+            ...e,
+            timestamp: typeof e.timestamp === "number"
+                ? e.timestamp          
+                : new Date(e.timestamp).getTime() 
+            }));
 
-    const res = await fetch(`${API_BASE_URL}/permenit/${selectedMCB}?${params.toString()}`);
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            // 2) Urutkan berdasarkan angka timestamp
+            parsed.sort((a, b) => a.timestamp - b.timestamp);
 
-    const json = await res.json();
+            // 3) Group per timestamp
+            const grouped = new Map();
+            parsed.forEach((entry) => {
+            const tms = entry.timestamp;            
+            const roomKey = `room${entry.kamar}`;
+            if (!grouped.has(tms)) {
+                grouped.set(tms, { timestamp: tms, [roomKey]: entry.kWh });
+            } else {
+                grouped.get(tms)[roomKey] = entry.kWh;
+            }
+            });
 
-    if (json.data) {
-      const orderedData = [...json.data].sort(
-        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-      );
-      const transformedData = [];
+            // 4) Hasilkan array siap dikirim ke chart
+            const transformedData = Array.from(grouped.values());
+            setData(transformedData);
+            setSummaryData(null);
 
-orderedData.forEach(entry => {
-  const existing = transformedData.find(e => e.timestamp === entry.timestamp);
-  const roomKey = `room${entry.kamar}`;
-  if (existing) {
-    existing[roomKey] = entry.kWh;
-  } else {
-    transformedData.push({
-      timestamp: entry.timestamp,
-      [roomKey]: entry.kWh,
-    });
-  }
-});
-
-      setData(transformedData);
-      setSummaryData(null);
-    } else {
-      setData([]);
-      setSummaryData(null);
-    }
-  } catch (err) {
-    console.error("Gagal mengambil data grafik per menit:", err);
-    setData([]);
-    setSummaryData(null);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-//---------------------------------------------------------------
-
+            console.log(
+            " Data realtime berhasil diambil:",
+            transformedData.length,
+            "baris"
+            );
+        } catch (err) {
+            console.error(" Gagal mengambil data grafik per menit:", err);
+            setData([]);
+            setSummaryData(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+    // ====================================================== 
 
     // ===== Komponen keterangan informasi ketika kursor diarahkan ke grafik =====
     const CustomTooltip = ({ active, payload, label }) => {
@@ -552,15 +651,26 @@ orderedData.forEach(entry => {
     // ========================================= 
 
     // ===== Format X-axis label =====
-const formatXAxisLabel = (value) => {
-  const date = new Date(value);
-  return date.toLocaleTimeString(language === "en" ? "en-US" : "id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-};
+    const formatXAxisLabel = (value) => {
+        const date = new Date(value);
 
+        if (isRealtimeMode) {
+            // Mode realtime: tampilkan jam-menit-detik
+            return date.toLocaleTimeString(language === "en" ? "en-US" : "id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+            timeZone: "Asia/Jakarta",
+            });
+        } else {
+            // Mode harian: tampilkan tanggal-bulan
+            return date.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            });
+        }
+    };
     // ========================================= 
 
     // ===== Komponen tampilan total/penjumlahan =====
@@ -633,6 +743,7 @@ const formatXAxisLabel = (value) => {
             </div>
         );
     };
+    // ========================================= 
 
     // ===== Generate line colors =====
     const getLineColor = (index) => {
@@ -655,9 +766,7 @@ const formatXAxisLabel = (value) => {
 
     return (
         <div className="grafik-navbar-container">
-            {/* Navbar */}
             <div className="grafik-navbar">
-                {/* Navbar kiri */}
                 <div className="grafik-navbar-left">
                     <button className="grafik-hamburger" onClick={toggleSidebar}>
                         <img src={hamburgerIcon} alt="Menu Sidebar" />
@@ -665,9 +774,7 @@ const formatXAxisLabel = (value) => {
                     <img src={logo} alt="Logo" className="grafik-logo-web" />
                     <a>Senergy</a>
                 </div>
-                {/* Navbar kanan */}
                 <div className="grafik-navbar-right">
-                    {/* Ukuran HandPhone */}
                     <div className="grafik-navbar-other-dropdown">
                         <img
                             ref={otherIconThreeDots}
@@ -687,21 +794,54 @@ const formatXAxisLabel = (value) => {
                             </div>
                         )}
                     </div>
-                    {/* Ukuran Desktop */}
                     <div className="grafik-navbar-right-desktop">
                         <Link to="/kontak">{t.berandaKontak}</Link>
                         <Link to="/beranda">{t.berandaBeranda}</Link>
                         <Link to="/akun">{t.berandaAkun}</Link>
                     </div>
-                    {/* Garis tegak navbar */}
                     <div className="grafik-garis"></div>
-                    {/* Notifikasi */}
-                    <img
-                        src={notificationIcon}
-                        alt="Notifikasi"
-                        className="grafik-notifikasi-icon"
-                    />
-                    {/* Ubah bahasa */}
+                    <div className="grafik-navbar-notification"> 
+                        <div className="grafik-notification-icon-container">
+                            <img 
+                                ref={notificationIconRef}
+                                src={notificationIcon} 
+                                alt="Notifikasi" 
+                                className="grafik-notification-icon" 
+                                onClick={() => setShowNotification(!showNotification)}
+                            />
+                            {savedNotifications.length > 0 && (
+                                <div className={`grafik-notification-badge ${savedNotifications.length > 99 ? 'large-count' : ''}`}>
+                                    {savedNotifications.length > 99 ? '99+' : savedNotifications.length}
+                                </div>
+                            )}
+                        </div>
+                        {showNotification && (
+                            <div className="grafik-navbar-notification-dropdown" ref={notificationRef}>
+                                <div className="grafik-notification-kolom">
+                                    {savedNotifications.length === 0 ? (
+                                        <div className="grafik-notification-item">
+                                            <div className="grafik-notification-judul-nolimit">{t.tidakAdaNotifikasiOverlimit}</div>
+                                        </div>
+                                    ) : (
+                                        savedNotifications.map((notif, index) => (
+                                            <div key={index} className="grafik-notification-item">
+                                                <div className="grafik-notification-judul">{t.kamar} {notif.id}</div>
+                                                <div className="grafik-notification-isi">
+                                                    <span>{t.namaPenggunaKos}: {notif.nama || '-'}</span>
+                                                    <span>{t.editPenggunaan}: {notif.penggunaan?.toFixed(2)} kWh</span>
+                                                    <span>{t.tanggalNotifikasi}: {notif.tanggal}</span>
+                                                    <span>Status: {t.infoMelebihi}</span>
+                                                </div>
+                                                <button className="grafik-hapus-notifikasi-btn" onClick={() => deleteNotification(notif.id)}>
+                                                    {t.hapusNotifikasi}
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="grafik-language-switch">
                         <img
                             ref={globeLanguage}

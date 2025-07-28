@@ -1,6 +1,6 @@
 // backend/server.js
 import dotenv from "dotenv";
-dotenv.config(); // ⬅️ Pindahkan ke paling atas
+dotenv.config(); 
 
 import express from "express";
 import cors from "cors";
@@ -9,6 +9,7 @@ import roomRoutes from "./routes/room.js";
 import sendmailRoutes from "./routes/sendmail.js";
 import { startSisaHariCron } from "./penguranganSisaHari.js";
 // import './transferLocal.js';
+// import './relayAutoControl.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -26,7 +27,7 @@ app.use("/api", roomRoutes);
 app.use("/api", sendmailRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Backend API is running successfully 🚀");
+  res.send("Backend API is running successfully");
 });
 
 app.listen(PORT, () => {

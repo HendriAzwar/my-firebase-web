@@ -2,10 +2,10 @@
 import admin from "firebase-admin";
 import dotenv from "dotenv";
 
-// 🔴 Load environment variables FIRST
+// Load environment variables FIRST
 dotenv.config();
 
-// 🔴 Cek apakah semua ENV terisi
+// Cek apakah semua ENV terisi
 if (
   !process.env.FIREBASE_PROJECT_ID ||
   !process.env.FIREBASE_PRIVATE_KEY ||
@@ -18,7 +18,7 @@ if (
   throw new Error("Missing Firebase environment variables");
 }
 
-// 🔰 Lengkapi semua field sesuai serviceAccountKey.json
+// Semua field sesuai serviceAccountKey.json
 const serviceAccount = {
   type: process.env.FIREBASE_TYPE || "service_account",
   project_id: process.env.FIREBASE_PROJECT_ID,
@@ -35,7 +35,7 @@ const serviceAccount = {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL, // ✅ RTDB jika digunakan
+    databaseURL: process.env.FIREBASE_DATABASE_URL, 
   });
 }
 

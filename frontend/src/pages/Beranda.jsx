@@ -13,6 +13,7 @@ import tripledotIcon from '../assets/other.svg';
 import translations from '../components/Bahasa.js';
 import { Link } from 'react-router-dom';
 import { useRef } from 'react';
+import useNotifications from '../hooks/Notification.js';
 
 const Beranda = () => {
     // === DARK MODE FUNCTIONALITY ===
@@ -39,13 +40,19 @@ const Beranda = () => {
     };
     // ================================
 
+    // ========= NOTIFICATION FUNCTIONALITY ========
+    const notificationRef = useRef(null);
+    const notificationIconRef = useRef(null);
+    const [showNotification, setShowNotification] = useState(false);
+    const { savedNotifications, deleteNotification } = useNotifications(); 
+    // =============================================
+
     // === NAVIGATION DROPDOWN FUNCTIONALITY ===
     const otherMenuRef = useRef(null);
     const otherIconRef = useRef(null);
     const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
     useEffect(() => {
         const handleClickOutsideDropdown = (event) => {
-            // Handle language dropdown
             if (
                 dropdownRef.current &&
                 !dropdownRef.current.contains(event.target) &&
@@ -54,8 +61,6 @@ const Beranda = () => {
             ) {
                 setShowDropdown(false);
             }
-
-            // Handle navigation right dropdown
             if (
                 otherMenuRef.current &&
                 !otherMenuRef.current.contains(event.target) &&
@@ -63,6 +68,14 @@ const Beranda = () => {
                 !otherIconRef.current.contains(event.target)
             ) {
                 setShowNavRightDropDown(false);
+            }
+            if (
+                notificationRef.current &&
+                !notificationRef.current.contains(event.target) &&
+                notificationIconRef.current &&
+                !notificationIconRef.current.contains(event.target)
+            ) {
+                setShowNotification(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutsideDropdown);
@@ -116,7 +129,6 @@ const Beranda = () => {
                     <a>Senergy</a>
                 </div>
                 <div className="beranda-navbar-right">
-                    {/* Ukuran HandPhone */}
                     <div className="beranda-navbar-other-dropdown">
                         <img
                             ref={otherIconRef}
@@ -127,22 +139,60 @@ const Beranda = () => {
                         />
                         {showNavRightDropDown && (
                             <div className="beranda-navbar-other-dropdown-menu" ref={otherMenuRef}>
-                                {/* untuk Link gunakan a untuk edit CSS */}
                                 <Link to="/kontak">{t.berandaKontak}</Link>
                                 <Link to="/beranda">{t.berandaBeranda}</Link>
                                 <Link to="/akun">{t.berandaAkun}</Link>
                             </div>
                         )}
                     </div>
-                    {/* Ukuran Desktop */}
                     <div className="beranda-navbar-right-desktop">
-                        {/* untuk Link gunakan a untuk edit CSS */}
                         <Link to="/kontak">{t.berandaKontak}</Link>
                         <Link to="/beranda">{t.berandaBeranda}</Link>
                         <Link to="/akun">{t.berandaAkun}</Link>
                     </div>
                     <div className="beranda-garis"></div>
-                    <img src={notificationIcon} alt="Notifikasi" className="beranda-notifikasi-icon" />
+                    <div className="beranda-navbar-notification"> 
+                        <div className="beranda-notification-icon-container">
+                            <img 
+                                ref={notificationIconRef}
+                                src={notificationIcon} 
+                                alt="Notifikasi" 
+                                className="beranda-notification-icon" 
+                                onClick={() => setShowNotification(!showNotification)}
+                            />
+                            {savedNotifications.length > 0 && (
+                                <div className={`beranda-notification-badge ${savedNotifications.length > 99 ? 'large-count' : ''}`}>
+                                    {savedNotifications.length > 99 ? '99+' : savedNotifications.length}
+                                </div>
+                            )}
+                        </div>
+                        {showNotification && (
+                            <div className="beranda-navbar-notification-dropdown" ref={notificationRef}>
+                                <div className="beranda-notification-kolom">
+                                    {savedNotifications.length === 0 ? (
+                                        <div className="beranda-notification-item">
+                                            <div className="beranda-notification-judul-nolimit">{t.tidakAdaNotifikasiOverlimit}</div>
+                                        </div>
+                                    ) : (
+                                        savedNotifications.map((notif, index) => (
+                                            <div key={index} className="beranda-notification-item">
+                                                <div className="beranda-notification-judul">{t.kamar} {notif.id}</div>
+                                                <div className="beranda-notification-isi">
+                                                    <span>{t.namaPenggunaKos}: {notif.nama || '-'}</span>
+                                                    <span>{t.editPenggunaan}: {notif.penggunaan?.toFixed(2)} kWh</span>
+                                                    <span>{t.tanggalNotifikasi}: {notif.tanggal}</span>
+                                                    <span>Status: {t.infoMelebihi}</span>
+                                                </div>
+                                                <button className="beranda-hapus-notifikasi-btn" onClick={() => deleteNotification(notif.id)}>
+                                                    {t.hapusNotifikasi}
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="beranda-language-switch">
                         <img
                             ref={globeRef}
@@ -172,9 +222,7 @@ const Beranda = () => {
                 </div>
             </div>
             <div className="beranda-sidebar" id="beranda-sidebar">
-                {/* untuk Link gunakan a untuk edit CSS */}
                 <Link to="/kamar" onClick={closeSidebar}>{t.berandaKamar}</Link>
-                {/* <Link to="/kontrol" onClick={closeSidebar}>{t.berandaKontrol}</Link> */}
                 <Link to="/grafik" onClick={closeSidebar}>{t.berandaGrafik}</Link>
             </div>
             <div className="beranda-main-content">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './Kamar.css'; 
 import logo from '../assets/LogoWeb.png';
 import notificationIcon from '../assets/notification.svg';
+import useNotifications from '../hooks/Notification.js';
 import globeIcon from '../assets/language.svg';
 import copyrightIcon from '../assets/copyright.svg';
 import lightModeIcon from '../assets/lightmode.svg';
@@ -14,9 +15,12 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+// import { rtdb } from '../firebase';                // path sesuai project
+// import { ref, onValue } from 'firebase/database';
+
 
 const Kamar = () => {
-    // ===== Pengaturan dark mode =====
+    // ===== Pengaturan Darkmode =====
     const [darkMode, setDarkMode] = useState(() => {
         const savedMode = localStorage.getItem('darkMode');
         return savedMode === 'true'; 
@@ -25,9 +29,9 @@ const Kamar = () => {
         document.body.className = darkMode ? 'kamar-dark-mode' : 'kamar-light-mode';
         localStorage.setItem('darkMode', darkMode);
     }, [darkMode]);
-    // ==============================
+    // ================================
 
-    // ===== Bahasa =====
+    // ========= Ganti Bahasa =========
     const [language, setLanguage] = useState(localStorage.getItem('language') || 'id');
     const handleLanguageChange = (lang) => {
         setLanguage(lang);
@@ -37,14 +41,17 @@ const Kamar = () => {
     const t = translations[language];
     // ==============================
 
-    // ===== Menu dropdown =====
+    // ========= 3 Menu + Globe + Lonceng Dropdown ========
     const dropdownRef = useRef(null);
     const globeRef = useRef(null);
     const otherMenuRef = useRef(null);
     const otherIconRef = useRef(null);
+    const notificationRef = useRef(null);
+    const notificationIconRef = useRef(null);
+    const [showNotification, setShowNotification] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showNavRightDropDown, setShowNavRightDropDown] = useState(false);
-
+    const { savedNotifications, deleteNotification, updateNotifications } = useNotifications();
     useEffect(() => {
         const handleClickOutsideDropdown = (event) => {
             if (
@@ -55,7 +62,6 @@ const Kamar = () => {
             ) {
                 setShowDropdown(false);
             }
-
             if (
                 otherMenuRef.current &&
                 !otherMenuRef.current.contains(event.target) &&
@@ -63,6 +69,14 @@ const Kamar = () => {
                 !otherIconRef.current.contains(event.target)
             ) {
                 setShowNavRightDropDown(false);
+            }
+            if (
+                notificationRef.current &&
+                !notificationRef.current.contains(event.target) &&
+                notificationIconRef.current &&
+                !notificationIconRef.current.contains(event.target)
+            ) {
+                setShowNotification(false)
             }
         };
         document.addEventListener('mousedown', handleClickOutsideDropdown);
@@ -72,21 +86,19 @@ const Kamar = () => {
     }, []);
     // ===================================
 
-    // ===== Sidebar =====
+    // ========== Sidebar ==========
     const toggleSidebar = () => {
         const sidebar = document.getElementById("kamar-sidebar");
         if (sidebar) {
             sidebar.classList.toggle("kamar-open-sidebar");
         }
     };
-
     const closeSidebar = () => {
         const sidebar = document.getElementById("kamar-sidebar");
         if (sidebar) {
             sidebar.classList.remove("kamar-open-sidebar");
         }
     };
-
     useEffect(() => {
         const handleClickOutside = (event) => {
             const sidebar = document.getElementById("kamar-sidebar");
@@ -106,12 +118,16 @@ const Kamar = () => {
     }, []);
     // ==============================
 
-    // ===== API Base URL =====
+    // ========== API Base URL + Input kamar dari firebase ==========
     const API_BASE_URL = import.meta.env.VITE_BACKEND_URL_KAMAR;
     const [kamarData, setKamarData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
+    useEffect(() => {
+        fetchKamarData();
+    }, []);
+
     const fetchKamarData = async () => {
         try {
             setLoading(true);
@@ -119,9 +135,36 @@ const Kamar = () => {
             if (!response.ok) {
                 throw new Error('Failed to fetch room data');
             }
+
             const data = await response.json();
             setKamarData(data);
             setError(null);
+
+            const initialPowerStatus = {};
+            data.forEach(kamar => {
+                const savedStatus = localStorage.getItem(`powerStatus_${kamar.id}`);
+
+                if (kamar.status_kamar === 0) {
+                    initialPowerStatus[kamar.id] = false;
+                } else {
+                    if (kamar.status_penggunaan === 'OVERLIMIT') {
+                        initialPowerStatus[kamar.id] = false;
+                    } else if (kamar.status_penggunaan === 'PERINGATAN' || kamar.status_penggunaan === 'AMAN') {
+                        if (savedStatus === 'ON') {
+                            initialPowerStatus[kamar.id] = true;
+                        } else if (savedStatus === 'OFF') {
+                            initialPowerStatus[kamar.id] = false;
+                        } else {
+                            initialPowerStatus[kamar.id] = true;
+                        }
+                    } else {
+                        initialPowerStatus[kamar.id] = false;
+                    }
+                }
+            });
+            setKamarPowerStatus(initialPowerStatus);
+            updateNotifications(data);
+
         } catch (err) {
             console.error('Error fetching room data:', err);
             setError(t.gagalMemuatKamar);
@@ -129,29 +172,24 @@ const Kamar = () => {
             setLoading(false);
         }
     };
+    // ========================================
 
-    useEffect(() => {
-        fetchKamarData();
-    }, []);
-    // ==============================
-
-    // ===== Tombol on/off kamar =====
+    // ========== Tombol on/off kamar ==========
     const [kamarPowerStatus, setKamarPowerStatus] = useState({});
-
     const togglePowerStatus = async (roomId) => {
         const kamar = kamarData.find(k => k.id === roomId);
         if (!kamar || kamar.status_penggunaan === "OVERLIMIT") {
             toast.error(`${t.relaykamar} ${roomId} ${t.dinonaktifkanKamar}`, { position: 'top-right', autoClose: 2500, closeButton: false, pauseOnHover: false });
             return;
         }
-
         const newStatus = !kamarPowerStatus[roomId]; 
+
+        localStorage.setItem(`powerStatus_${roomId}`, newStatus ? 'ON' : 'OFF');
 
         setKamarPowerStatus((prevStatus) => ({
             ...prevStatus,
             [roomId]: newStatus,
         }));
-
         try {
             await fetch(`${API_BASE_URL}/kamar/${roomId}/relay`, {
                 method: "PUT",
@@ -168,7 +206,7 @@ const Kamar = () => {
     };
     // ==============================
 
-    // ===== Translate notifikasi =====
+    // ========== Status Layout Kamar ==========
     const translateStatusPenggunaan = (status) => {
         if (!status) return null;
         switch (status.toUpperCase()) {
@@ -179,12 +217,12 @@ const Kamar = () => {
             case 'OVERLIMIT':
             return t.infoMelebihi;
             default:
-            return status; // fallback, kalau belum diterjemahkan
+            return status;
         }
     };
     // ==============================
 
-    // ===== Fungsi menampilkan notifikasi peringatan =====
+    // ===== Notifikasi peringatan dan overlimit tiap kamar (toast) =====
     const showKamarNotifikasi = (kamar) => {
         if (!kamar) return;
 
@@ -206,7 +244,22 @@ const Kamar = () => {
     };
     // ==============================
 
-    // ===== REGISTRASI KAMAR =====
+//     const [arusRealtime, setArusRealtime] = useState({ 1: 0, 2: 0, 3: 0 });
+
+//     useEffect(() => {
+//   // buat listener untuk tiap path, misal:
+//   [1,2,3].forEach((kamarId) => {
+//     const arusRef = ref(rtdb, `monitoring_listrik_mcb1/${kamarId}/arus`);
+//     onValue(arusRef, (snap) => {
+//       const val = snap.val();
+//       setArusRealtime(prev => ({ ...prev, [kamarId]: val ?? 0 }));
+//     });
+//   });
+
+//   // cleanup tidak perlu karena onValue otomatis dihapus on unmount
+// }, []);
+
+    // ========== REGISTRASI KAMAR ==========
     const [selectedKamarId, setSelectedKamarId] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
@@ -215,7 +268,6 @@ const Kamar = () => {
         sisa_hari: 30,
         batas_kwh: ''
     });
-
     const handleFormInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -223,15 +275,12 @@ const Kamar = () => {
             [name]: value
         }));
     };
-
     const handleTombolGunakanKamar = (roomData) => {
         if (roomData.status_kamar === 0) {
-            // Room is empty, show registration form
             setSelectedKamarId(roomData.id);
             setShowForm(true);
         }
     };
-
     const registerTenant = async (roomId, tenantData) => {
         try {
             const response = await fetch(`${API_BASE_URL}/kamar/${roomId}/register`, {
@@ -253,25 +302,19 @@ const Kamar = () => {
     };
 
     const handleSubmitForm = async () => {
-        // Validasi input
         if (!formData.nama_lengkap.trim() || !formData.nomor_telepon_pengguna_kos.trim()) {
             toast.error(t.namaDanNomorWajibKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
             return;
         }
-        // Submit data
         try {
             await registerTenant(selectedKamarId, formData);
-
-            // Sync penggunaan_kwh setelah registrasi
             await fetch(`${API_BASE_URL}/kamar/${selectedKamarId}/sinkron-kwh`, {
                 method: "POST",
             });
 
             toast.success(t.berhasilDaftarKamar, { position: 'top-right', autoClose: 1500, closeButton: false, pauseOnHover: false });
-            // Bagian untuk menampilkan notif kedua (peringatan)
             setShowForm(false);
             setFormData({ nama_lengkap: '', nomor_telepon_pengguna_kos: '' });
-
             setTimeout(async () => {
                 const response = await fetch(`${API_BASE_URL}/kamar`);
                 if (!response.ok) throw new Error("Gagal fetch data");
@@ -280,14 +323,22 @@ const Kamar = () => {
 
                 const updatedKamar = data.find(k => k.id === selectedKamarId);
                 showKamarNotifikasi(updatedKamar);
-            }, 300); 
+
+                // Perbarui power status berdasarkan status penggunaan
+                if (updatedKamar && updatedKamar.status_kamar === 1) {
+                    setKamarPowerStatus(prev => ({
+                        ...prev,
+                        [updatedKamar.id]: updatedKamar.status_penggunaan === 'AMAN' || updatedKamar.status_penggunaan === 'PERINGATAN'
+                    }));
+                }
+            }, 300);
         } catch (err) {
             toast.error(t.gagalDaftarKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
         }
     };
-    // ==============================
+    // ======================================
 
-    // ===== EDIT DATA KAMAR =====
+    // ======== Tombol Edit Kamar ========
     const [showEditForm, setShowEditForm] = useState(false);
     const [selectedKamarData, setSelectedKamarData] = useState(null);
     const [showBiayaModal, setShowBiayaModal] = useState(false);
@@ -308,7 +359,6 @@ const Kamar = () => {
             [name]: value
         }));
     };
-    
     const handleEditTenant = (roomData) => {
         setSelectedKamarId(roomData.id);
         setSelectedKamarData(roomData);
@@ -320,7 +370,6 @@ const Kamar = () => {
         });
         setShowEditForm(true);
     };
-    
     const updateTenant = async (roomId, tenantData) => {
         try {
             const response = await fetch(`${API_BASE_URL}/kamar/${roomId}/tenant`, {
@@ -340,7 +389,6 @@ const Kamar = () => {
             throw err;
         }
     };
-    
     const submitTenantUpdate = async (batasBaru) => {
         try {
             await updateTenant(selectedKamarId, {
@@ -363,23 +411,27 @@ const Kamar = () => {
 
                 const updatedKamar = data.find(k => k.id === selectedKamarId);
                 showKamarNotifikasi(updatedKamar);
+
+                if (updatedKamar) {
+                    setKamarPowerStatus(prev => ({
+                        ...prev,
+                        [updatedKamar.id]: updatedKamar.status_penggunaan === 'AMAN' || updatedKamar.status_penggunaan === 'PERINGATAN'
+                    }));
+                }
             }, 300);
         } catch (err) {
             console.error('Gagal mengupdate data. Silakan coba lagi.', err);
             toast.error(t.gagalUpdateKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
         }
     };
-    
     const handleSubmitEditForm = async () => {
         if (!editFormData.nama_lengkap.trim() || !editFormData.nomor_telepon_pengguna_kos.trim()) {
             toast.error(t.namaDanNomorWajibKamar, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
             return;
         }
-
         const batasKwhLama = parseFloat(editFormData.batas_kwh || 0);
         const tambahan = parseFloat(editFormData.tambahan_kwh || 0);
         const batasBaru = batasKwhLama + tambahan;
-
         const tarif = 1445;
         const estimasi = tambahan * tarif;
 
@@ -395,10 +447,8 @@ const Kamar = () => {
             setShowBiayaModal(true);
             return;
         }
-
         await submitTenantUpdate(batasBaru);
     };
-    
     useEffect(() => {
         if (showForm || showEditForm) {
             document.body.style.overflow = 'hidden';
@@ -410,17 +460,15 @@ const Kamar = () => {
             document.body.style.overflow = 'auto';
         };
     }, [showForm, showEditForm]);
-    // ==========================
+    // ====================================
 
-    // ===== DELETE KAMAR =====
+    // ======== Tombol Delete Kamar ========
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRoomId, setSelectedRoomId] = useState(null);
-
     const handleDeleteTenant = (roomId) => {
         setSelectedRoomId(roomId);
         setShowDeleteModal(true);
     };
-
     const deleteTenant = async (roomId) => {
         try {
             const response = await fetch(`${API_BASE_URL}/kamar/${roomId}/tenant`, {
@@ -439,7 +487,6 @@ const Kamar = () => {
             throw err;
         }
     };
-    
     const handleConfirmDeleteTenant = async () => {
         try {
             const result = await deleteTenant(selectedRoomId);
@@ -456,32 +503,18 @@ const Kamar = () => {
     };
     // =====================================
 
-    // ======= Status Kamar =======
-    useEffect(() => {
-        // Perbarui status relay berdasarkan data Firestore
-        const updatedStatus = {};
-        kamarData.forEach(kamar => {
-            updatedStatus[kamar.id] = kamar.status_penggunaan !== 'OVERLIMIT';
-        });
-        setKamarPowerStatus(updatedStatus);
-    }, [kamarData]);
-    // ===============================
-
-    // ===== Pengaturan convert timestamp =====
+    // ========== Pengaturan convert timestamp ke tampilan user ==========
     const convertFirebaseTimestamp = (timestamp) => {
         if (!timestamp) return null;
-        
-        // Jika timestamp adalah Firebase Timestamp object
+
         if (timestamp && typeof timestamp.toDate === 'function') {
             return timestamp.toDate();
         }
-        
-        // Jika timestamp adalah object dengan _seconds dan _nanoseconds
+
         if (timestamp && timestamp._seconds) {
             return new Date(timestamp._seconds * 1000);
         }
         
-        // Fallback untuk format lain
         try {
             return new Date(timestamp);
         } catch (error) {
@@ -491,17 +524,17 @@ const Kamar = () => {
     };
     // =====================================
     
-    // ===== Pengaturan warna status =====
+    // ========== Pengaturan warna status pada Layout kamar ==========
     const getStatusColor = (status_penggunaan) => {
-        if (status_penggunaan === 'OVERLIMIT') return 'lebihBatas'; // ini warnanya ada di css = .kamar-status-label.lebihBatas
-        if (status_penggunaan === 'PERINGATAN') return 'peringatan'; // ini warnanya ada di css = .kamar-status-label.peringatan
-        return 'aman'; // ini warnanya ada di css = .kamar-status-label.peringatan
+        if (status_penggunaan === 'OVERLIMIT') return 'lebihBatas'; 
+        if (status_penggunaan === 'PERINGATAN') return 'peringatan';
+        return 'aman';
     };
-    // =====================================
+    // ===============================================================
 
-    // ===== Update data kamar (Penyewa kost) - Edit dan Hapus =====
+    // ========== Update data kamar (Penyewa kost) setelah edit dan hapus ==========
     const renderKamarItem = (roomData) => {
-        let isPowerOn = kamarPowerStatus[roomData.id] !== false; // default true
+        let isPowerOn = kamarPowerStatus[roomData.id]; 
 
         if (roomData.status_penggunaan === 'OVERLIMIT') {
             isPowerOn = false;
@@ -529,6 +562,11 @@ const Kamar = () => {
                             <p>
                                 <strong>{t.editPenggunaan}</strong>: {typeof roomData.penggunaan_kwh === 'number' && !isNaN(roomData.penggunaan_kwh)? `${roomData.penggunaan_kwh.toFixed(2)} kWh`: '-'}
                             </p>
+                            
+                            {/* <p>
+  <strong>Arus Sekarang:</strong> {arusRealtime[roomData.id]?.toFixed(2)} A
+</p> */}
+
                             <p>
                                 {roomData.batas_kwh !== undefined && roomData.batas_kwh !== '-' ? (
                                     <>
@@ -545,9 +583,7 @@ const Kamar = () => {
                             </p>
                         </div>
                     </div>
-                    {/* Tombol tiap kamar */}
                     <div className="kamar-tombol-kamar">
-                        {/* Tombol status on/off kamar */}
                         {roomData.status_penggunaan && (
                             <label 
                                 className={`kamar-status-label ${getStatusColor(roomData.status_penggunaan)}`}
@@ -559,11 +595,10 @@ const Kamar = () => {
                             className="kamar-on-off"
                             style={{ backgroundColor: buttonColor }}
                             onClick={() => togglePowerStatus(roomData.id)}
-                            disabled={roomData.status_penggunaan === 'OVERLIMIT'}
+                            disabled={roomData.status_kamar === 0 || roomData.status_penggunaan === 'OVERLIMIT'}
                         >
                             {buttonLabel === 'NYALA' ? t.tombolOnKontrol : t.tombolOffKontrol}
                         </button>
-                        {/* Tombol gunakan kamar atau status "sedang digunakan" */}
                         <button
                             className={`kamar-status-gunakan ${roomData.status_kamar ? 'active' : 'inactive'}`}
                             onClick={() => handleTombolGunakanKamar(roomData)}
@@ -571,7 +606,6 @@ const Kamar = () => {
                         >
                             {roomData.status_kamar ? t.kamarSedangDigunakan : t.gunakanKamar}
                         </button>
-                        {/* Tombol edit dan hapus setelah gunakan kamar */}
                         {roomData.status_kamar === 1 && (
                             <div className="kamar-tombol-edit-hapus">
                                 <button
@@ -597,7 +631,7 @@ const Kamar = () => {
     };
     // =====================================
 
-    // ===== Pengaturan ketika error =====
+    // ========== Tampilan coba lagi ketika error jaringan ==========
     if (error) {
         return (
             <div className="kamar-error-container">
@@ -608,16 +642,15 @@ const Kamar = () => {
             </div>
         );
     }
-    // =====================================
+    // =========================================
 
-    // ========= Loading ==========
+    // ========= Loading ketika error jaringan ==========
     const LoadingSpinner = ({ size = 50, strokeWidth = 4 }) => {
-        const radius = (size - strokeWidth) / 3; //ukuran lingkaran
+        const radius = (size - strokeWidth) / 3;
         const circumference = radius * 0.34 * Math.PI;
         const strokeDasharray = circumference;
-        const strokeDashoffset = circumference * 2; //lingkaran muter
+        const strokeDashoffset = circumference * 2;
         const spinnerColor = darkMode ? '#ffffff' : '#000000';
-
         return (
             <div className="kamar-loading">
                 <svg
@@ -649,7 +682,7 @@ const Kamar = () => {
             </div>
         );
     };
-    // ==============================================
+    // ==========================================================
 
     return (
         <div className="kamar-halaman">
@@ -663,7 +696,6 @@ const Kamar = () => {
                     <a>Senergy</a>
                 </div>
                 <div className="kamar-navbar-right">
-                    {/* Ukuran HandPhone */}
                     <div className="kamar-navbar-other-dropdown">
                         <img
                             ref={otherIconRef}
@@ -680,14 +712,54 @@ const Kamar = () => {
                             </div>
                         )}
                     </div>
-                    {/* Ukuran Desktop */}
                     <div className="kamar-navbar-right-desktop">
                         <Link to="/kontak">{t.berandaKontak}</Link>
                         <Link to="/beranda">{t.berandaBeranda}</Link>
                         <Link to="/akun">{t.berandaAkun}</Link>
                     </div>
                     <div className="kamar-garis"></div>
-                    <img src={notificationIcon} alt="Notifikasi" className="kamar-notifikasi-icon" />
+                    <div className="kamar-navbar-notification"> 
+                        <div className="kamar-notification-icon-container">
+                            <img 
+                                ref={notificationIconRef}
+                                src={notificationIcon} 
+                                alt="Notifikasi" 
+                                className="kamar-notification-icon" 
+                                onClick={() => setShowNotification(!showNotification)}
+                            />
+                            {savedNotifications.length > 0 && (
+                                <div className={`kamar-notification-badge ${savedNotifications.length > 99 ? 'large-count' : ''}`}>
+                                    {savedNotifications.length > 99 ? '99+' : savedNotifications.length}
+                                </div>
+                            )}
+                        </div>
+                        {showNotification && (
+                            <div className="kamar-navbar-notification-dropdown" ref={notificationRef}>
+                                <div className="kamar-notification-kolom">
+                                    {savedNotifications.length === 0 ? (
+                                        <div className="kamar-notification-item">
+                                            <div className="kamar-notification-judul-nolimit">{t.tidakAdaNotifikasiOverlimit}</div>
+                                        </div>
+                                    ) : (
+                                        savedNotifications.map((notif, index) => (
+                                            <div key={index} className="kamar-notification-item">
+                                                <div className="kamar-notification-judul">{t.kamar} {notif.id}</div>
+                                                <div className="kamar-notification-isi">
+                                                    <span>{t.namaPenggunaKos}: {notif.nama || '-'}</span>
+                                                    <span>{t.editPenggunaan}: {notif.penggunaan?.toFixed(2)} kWh</span>
+                                                    <span>{t.tanggalNotifikasi}: {notif.tanggal}</span>
+                                                    <span>Status: {t.infoMelebihi}</span>
+                                                </div>
+                                                <button className="kamar-hapus-notifikasi-btn" onClick={() => deleteNotification(notif.id)}>
+                                                    {t.hapusNotifikasi}
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="kamar-language-switch">
                         <img
                             ref={globeRef}
@@ -718,10 +790,8 @@ const Kamar = () => {
             </div>
             <div className="kamar-sidebar" id="kamar-sidebar">
                 <Link to="/kamar" onClick={closeSidebar}>{t.berandaKamar}</Link>
-                {/* <Link to="/kontrol" onClick={closeSidebar}>{t.berandaKontrol}</Link> */}
                 <Link to="/grafik" onClick={closeSidebar}>{t.berandaGrafik}</Link>
             </div>
-            {/* Konten utama */}
             <div className="kamar-main-content">
                 <div className="kamar-feature-grid">
                     {loading ? (
@@ -733,11 +803,10 @@ const Kamar = () => {
                     )}
                 </div>
             </div>
-            {/* Daftar kamar */}
             {showForm && (
                 <div className="kamar-daftar-overlay">
                     <div className="kamar-daftar-container">
-                        <h2 className="kamar-daftar-title">Pendaftaran Kamar</h2>
+                        <h2 className="kamar-daftar-title">{t.pendaftaranKamar}</h2>
                         <div className="kamar-daftar-content">
                             <div className="kamar-daftar-left">
                                 <h3>{t.kamar} {selectedKamarId}</h3>
@@ -774,6 +843,7 @@ const Kamar = () => {
                                     placeholder={t.placeholderBatasKwh}
                                     value={formData.batas_kwh}
                                     onChange={handleFormInputChange}
+                                    onWheel={(e) => e.currentTarget.blur()}
                                     required
                                 />
                                 <label className="kamar-daftar-labelsisa">{t.labelSisaHari}</label>
@@ -784,6 +854,7 @@ const Kamar = () => {
                                     placeholder={t.placeholderSisaHari}
                                     value={formData.sisa_hari}
                                     onChange={handleFormInputChange}
+                                    onWheel={(e) => e.currentTarget.blur()}
                                     required
                                 />
                                 <button className="kamar-daftar-button-kamar" onClick={handleSubmitForm}>
@@ -798,8 +869,6 @@ const Kamar = () => {
                     </div>
                 </div>
             )}
-
-            {/* Edit Kamar */}
             {showEditForm && (
                 <div className="kamar-daftar-overlay">
                     <div className="kamar-daftar-container">
@@ -854,6 +923,7 @@ const Kamar = () => {
                                     placeholder={t.placeholderBatasKwh}
                                     value={editFormData.batas_kwh}
                                     onChange={handleEditFormInputChange}
+                                    onWheel={(e) => e.currentTarget.blur()}
                                 />
                                 {selectedKamarData?.status_penggunaan === 'OVERLIMIT' && (
                                 <>
@@ -864,6 +934,7 @@ const Kamar = () => {
                                         className="kamar-daftar-inputtambahan" 
                                         placeholder={t.placeholderTambahanKwh}
                                         value={editFormData.tambahan_kwh}
+                                        onWheel={(e) => e.currentTarget.blur()}
                                         onChange={(e) =>
                                             setEditFormData(prev => ({
                                                 ...prev,
@@ -889,8 +960,6 @@ const Kamar = () => {
                     </div>
                 </div>
             )}
-
-            {/* Konfirmasi Penambahan Biaya */}
             {showBiayaModal && (
                 <div className="kamar-hapus-overlay">
                     <div className="kamar-hapus-box">
@@ -909,8 +978,6 @@ const Kamar = () => {
                     </div>
                 </div>
             )}
-
-            {/* Hapus kamar */}
             {showDeleteModal && (
                 <div className="kamar-hapus-overlay">
                     <div className="kamar-hapus-box">
@@ -922,7 +989,6 @@ const Kamar = () => {
                     </div>
                 </div>
             )}
-
             <footer className="kamar-footer-edit">
                 <img src={copyrightIcon} className="kamar-footer-icon" />
                 <p>{t.berandaHakCipta}</p>
