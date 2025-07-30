@@ -1208,6 +1208,11 @@ body, html, #root {
         right: -25px;
     }
 
+    .kamar-navbar-notification-dropdown {
+        top: 39px;
+        right:-90px;
+    }
+    
     .kamar-dropdown-language {
         top: 39px;
     }

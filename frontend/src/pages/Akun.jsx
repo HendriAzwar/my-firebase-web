@@ -135,8 +135,6 @@ const Akun = () => {
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     setUserData(docSnap.data());
-                } else {
-                    toast.error(t.userTidakAda, { position: 'top-right', autoClose: 2000, closeButton: false, pauseOnHover: false });
                 }
             } catch (err) {
                 console.error('Gagal ambil data user:', err);

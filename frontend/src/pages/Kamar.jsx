@@ -15,8 +15,8 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// import { rtdb } from '../firebase';                // path sesuai project
-// import { ref, onValue } from 'firebase/database';
+import { ref, onValue, query, orderByChild, equalTo, limitToLast, onChildAdded, off } from 'firebase/database';
+import { rtdb } from '../firebase';    // your initialized RTDB instance
 
 
 const Kamar = () => {
@@ -244,20 +244,85 @@ const Kamar = () => {
     };
     // ==============================
 
-//     const [arusRealtime, setArusRealtime] = useState({ 1: 0, 2: 0, 3: 0 });
+    // ========== Fetch real-time nilai arus dari rtdb ==========
+    const [arusRealtime, setArusRealtime] = useState({})
 
-//     useEffect(() => {
-//   // buat listener untuk tiap path, misal:
-//   [1,2,3].forEach((kamarId) => {
-//     const arusRef = ref(rtdb, `monitoring_listrik_mcb1/${kamarId}/arus`);
-//     onValue(arusRef, (snap) => {
-//       const val = snap.val();
-//       setArusRealtime(prev => ({ ...prev, [kamarId]: val ?? 0 }));
-//     });
-//   });
+    // 1) Fetch list kamar seperti biasa
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/kamar`)
+        .then(res => res.json())
+        .then(json => setKamarData(json))
+    }, [])
 
-//   // cleanup tidak perlu karena onValue otomatis dihapus on unmount
-// }, []);
+    // 2) Pasang listener RTDB **sekali** setelah kamarData terisi
+    useEffect(() => {
+        // kalau kamarData masih kosong, skip
+        if (kamarData.length === 0) return
+
+        // kumpulkan semua unsubscribe fn
+        const unsubscribers = []
+
+        kamarData.forEach(room => {
+            const id = room.id
+            // bikin query: ambil hanya entry terakhir untuk kamar ini
+            const q = query(
+                ref(rtdb, 'monitoring_listrik_mcb1'),
+                orderByChild('kamar'),
+                equalTo(id),
+                limitToLast(1)
+            )
+
+            // pasang listener
+            const unsub = onValue(q, snap => {
+                if (!snap.exists()) return
+                const latest = Object.values(snap.val())[0]
+                setArusRealtime(prev => ({
+                    ...prev,
+                    [id]: typeof latest.arus === 'number'
+                    ? latest.arus
+                    : parseFloat(latest.arus) || 0
+                }))
+            })
+            unsubscribers.push(unsub)
+        })
+
+        // cleanup semua listener
+        return () => {
+            unsubscribers.forEach(unsub => unsub())
+        }
+    }, [kamarData])
+    // ==============================
+
+
+    // // ===== Notifikasi overload dari RTDB =====
+    // const showOverloadNotifikasi = (kamarId, arus) => {
+    //     toast.error(`${t.kamar} ${kamarId} overload: ${arus.toFixed(2)}A, ${t.otomatisDimatikan}`, {
+    //         position: 'top-right',
+    //         autoClose: 3000,
+    //         closeButton: false, 
+    //         pauseOnHover: false
+    //     });
+    // };
+
+    // // ===== Listen for Overload Notifications =====
+    // useEffect(() => {
+    //     const nRef = ref(rtdb, 'notifications');
+    //     const u = onChildAdded(nRef, snap => {
+    //         const d = snap.val();
+    //         if (d.jenis === 'OVERLOAD') {
+    //             const kamarId = d.kamar;
+    //             const arus = typeof d.arus === 'number' ? d.arus : parseFloat(d.arus) || 0;
+                
+    //             // Gunakan fungsi yang konsisten dengan peringatan/overlimit
+    //             showOverloadNotifikasi(kamarId, arus);
+                
+    //             // Update power status
+    //             setKamarPowerStatus(prev => ({ ...prev, [kamarId]: false }));
+    //         }
+    //     });
+    //     return () => off(nRef, 'child_added', u);
+    // }, [t]); // Tambahkan dependency t untuk translations
+
 
     // ========== REGISTRASI KAMAR ==========
     const [selectedKamarId, setSelectedKamarId] = useState(null);
@@ -562,11 +627,9 @@ const Kamar = () => {
                             <p>
                                 <strong>{t.editPenggunaan}</strong>: {typeof roomData.penggunaan_kwh === 'number' && !isNaN(roomData.penggunaan_kwh)? `${roomData.penggunaan_kwh.toFixed(2)} kWh`: '-'}
                             </p>
-                            
-                            {/* <p>
-  <strong>Arus Sekarang:</strong> {arusRealtime[roomData.id]?.toFixed(2)} A
-</p> */}
-
+                            <p>
+                                <strong>{t.arusTerbaru}</strong>: {arusRealtime[roomData.id] != null ? `${arusRealtime[roomData.id].toFixed(4)}A` : '-'}
+                            </p>
                             <p>
                                 {roomData.batas_kwh !== undefined && roomData.batas_kwh !== '-' ? (
                                     <>

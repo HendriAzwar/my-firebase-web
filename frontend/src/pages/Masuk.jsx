@@ -5,7 +5,7 @@ import translations from '../components/Bahasa.js';
 import globeIcon from '../assets/language.svg';
 import showIcon from '../assets/unhide.svg';
 import hideIcon from '../assets/hide.svg';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { auth, db } from '../firebase';
@@ -30,6 +30,8 @@ const Masuk = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [canRegister, setCanRegister] = useState(true);
+    const [checkingUsers, setCheckingUsers] = useState(true);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
     
     // ========== HOOKS & UTILITIES ==========
     const t = translations[language];
@@ -42,7 +44,26 @@ const Masuk = () => {
         checkUserCount();
     }, []);
 
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
     const checkUserCount = async () => {
+        if (!navigator.onLine) {
+            setCanRegister(false); // langsung nonaktifkan jika offline
+            setCheckingUsers(false);
+            return;
+        }
+
         try {
             const usersRef = collection(db, 'users');
             const q = query(usersRef, limit(1));
@@ -50,7 +71,9 @@ const Masuk = () => {
             setCanRegister(querySnapshot.empty);
         } catch (error) {
             console.error('Error checking user count:', error);
-            setCanRegister(true);
+            setCanRegister(false);
+        } finally {
+            setCheckingUsers(false);
         }
     };
 
@@ -71,6 +94,9 @@ const Masuk = () => {
     };
 
     // ========== AUTHENTICATION FUNCTIONS ==========
+    const location = useLocation();
+    const redirectPath = location.state?.from || '/beranda';
+
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
@@ -80,19 +106,24 @@ const Masuk = () => {
                 passwordValidation.password
             );
             const user = userCredential.user;
+
+            const now = Date.now();
             localStorage.setItem('userId', user.uid);
-            
+            localStorage.setItem('loginTime', now.toString());
+
+            const lastVisited = redirectPath;
+
             toast.success(t.masukBerhasil, {
                 position: 'top-right',
                 autoClose: 1000,
                 closeButton: false,
                 pauseOnHover: false,
             });
-            
-            setTimeout(() => navigate('/beranda'), 2000);
+
+            setTimeout(() => navigate(lastVisited), 2000);
         } catch (error) {
             console.error('Firebase login error:', error.code);
-            handleLoginError(error);
+            handleLoginError(error); 
         }
     };
     
@@ -215,7 +246,7 @@ const Masuk = () => {
                         <Link to="/lupa-password">{t.lupaKataSandi}</Link>
                     </div>
                     <button type="submit">{t.masuk}</button>
-                    {canRegister && (
+                    {!checkingUsers && isOnline && canRegister && (
                         <p className="login-register">
                             {t.belumPunyaAkun}{' '}
                             <Link to="/daftar">{t.daftarDisini}</Link>

@@ -223,7 +223,7 @@ router.put("/kamar/:id/tenant", async (req, res) => {
             const pesan = `⚠️ *Peringatan KWH* untuk kamar *${id}*!
             _Penggunaan_: ${usage.toFixed(2)} kWh
             _Batas Baru_: ${batas_kwh} kWh
-            _Berhematlah dalam penggunaan listrik dan jangan terlalu boros, batas penggunaan listrik anda hampir mencapai batas._`;
+            _Berhematlah dalam penggunaan listrik dan jangan terlalu boros, penggunaan listrik anda hampir mencapai batas._`;
             const sukses = await kirimPesanTelegram(pesan);
             console.log(`[Telegram] Notifikasi PERINGATAN kamar ${id} sukses?`, sukses);
         }else if (status === 'OVERLIMIT') {

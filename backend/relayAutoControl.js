@@ -24,16 +24,23 @@ rtdb.ref(COLLECTION).on('child_added', async snap => {
                           .sort(([,a],[,b])=>b-a)[0][0];
     console.log(`Overload → OFF relay kamar ${kamarMax}`);
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/kamar/${kamarMax}/relay`,
-        { method:'PUT',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({relay_status:'OFF'})
-        }
-      );
-      if (!res.ok) throw new Error(res.status);
-      console.log(`Relay ${kamarMax} OFF sukses`);
-    } catch(err){
+    const res = await fetch(`${BACKEND_URL}/kamar/${kamarMax}/relay`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ relay_status: 'OFF' })
+    });
+    // if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // console.log(`✅ Relay kamar ${kamarMax} OFF berhasil`);
+
+    // // —– PUSH NOTIFIKASI ke RTDB —–
+    // await rtdb.ref('notifications').push({
+    //   kamar: kamarMax,
+    //   jenis: 'OVERLOAD',
+    //   arus: arusPerKamar[kamarMax],
+    //   timestamp: Date.now()
+    // });
+    // console.log(`🔔 Notifikasi overload kamar ${kamarMax} dikirim`);
+  } catch(err){
       console.error('Gagal OFF relay:', err.message);
     }
   }
