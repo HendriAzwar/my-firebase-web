@@ -178,6 +178,31 @@ const Akun = () => {
         if (Object.keys(payload).length === 0) return;
 
         try {
+            if (payload.email) {
+                if (payload.email !== userData.email) {
+                    const emailExists = await checkEmailExists(payload.email);
+                    if (emailExists) {
+                    toast.error(t.emailTelahDigunakan, {
+                            position: 'top-right',
+                            autoClose: 2000,
+                            closeButton: false,
+                            pauseOnHover: false
+                        });
+                        return;
+                    }
+                    setPendingUpdate(payload);
+                    setShowPasswordModal(true);
+                    return;
+                } else {
+                    toast.error(t.emailTelahDigunakan, {
+                        position: 'top-right',
+                        autoClose: 2000,
+                        closeButton: false,
+                        pauseOnHover: false
+                    });
+                    return;
+                }
+                }
             if (payload.phone_number) {
                 const phoneExists = await checkPhoneNumberExists(payload.phone_number);
                 if (phoneExists) {
@@ -302,6 +327,21 @@ const Akun = () => {
     const [pendingUpdate, setPendingUpdate] = useState({});
     // ================================================
 
+    // ====== Pengecekan email ada atau tidak ======
+    const checkEmailExists = async (email) => {
+        try {
+            const usersRef = collection(db, 'users');
+            const q = query(usersRef, where('email', '==', email));
+            const querySnapshot = await getDocs(q);
+
+            return !querySnapshot.empty;
+        } catch (error) {
+            console.error('Error checking email:', error);
+            return false;
+        }
+    };
+    // ============================================
+
     // ====== Function untuk mengecek apakah nomor telepon sudah digunakan ========
     const checkPhoneNumberExists = async (phoneNumber) => {
         try {
@@ -309,7 +349,8 @@ const Akun = () => {
             const q = query(usersRef, where('phone_number', '==', phoneNumber));
             const querySnapshot = await getDocs(q);
 
-            return !querySnapshot.empty && querySnapshot.docs[0].id !== uid;
+            // return !querySnapshot.empty && querySnapshot.docs[0].id !== uid;
+            return !querySnapshot.empty;
         } catch (error) {
             console.error('Error checking phone number:', error);
             return false;
